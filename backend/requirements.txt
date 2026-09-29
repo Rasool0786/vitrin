@@ -1,0 +1,10 @@
+Django
+djangorestframework
+django-environ
+django-filter
+drf-spectacular
+django-extensions
+psycopg[binary]
+redis
+gunicorn
+Pillow

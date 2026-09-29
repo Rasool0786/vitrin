@@ -1,0 +1,119 @@
+services:
+  db:
+    image: postgres:16-alpine
+    container_name: vitrin-db
+    restart: always
+
+    env_file:
+      .env
+
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+
+    healthcheck:
+      test: ["CMD-SHELL", 'pg_isready -U "$$POSTGRES_USER" -d "$$POSTGRES_DB"']
+
+      interval: 10s
+      timeout: 5s
+      retries: 5
+      start_period: 10s
+
+    networks:
+      - net
+
+  redis:
+    image: redis:7-alpine
+    container_name: vitrin-redis
+    restart: always
+
+    env_file:
+      .env
+
+    command:
+      - sh
+      - -c
+      - >
+        redis-server
+        --requirepass "$$REDIS_PASSWORD"
+        --appendonly yes
+
+    volumes:
+      - redis_data:/data
+
+    healthcheck:
+      test:
+        [
+          "CMD-SHELL",
+          'REDISCLI_AUTH="$$REDIS_PASSWORD" redis-cli ping | grep -q PONG',
+        ]
+
+      interval: 10s
+      timeout: 5s
+      retries: 5
+      start_period: 5s
+
+    networks:
+      - net
+
+  web:
+    build:
+      context: ./backend
+      dockerfile: Dockerfile
+
+    container_name: vitrin-web
+    restart: always
+
+    env_file:
+      .env
+
+    environment:
+      POSTGRES_HOST: db
+      REDIS_HOST: redis
+
+    volumes:
+      - media_data:/app/media
+      - static_data:/app/staticfiles
+
+    depends_on:
+      db:
+        condition: service_healthy
+
+      redis:
+        condition: service_healthy
+
+    expose:
+      - "8000"
+
+    networks:
+      - net
+
+  nginx:
+    build:
+      context: .
+      dockerfile: nginx/Dockerfile
+
+    container_name: vitrin-nginx
+    restart: always
+
+    ports:
+      - "80:80"
+
+    volumes:
+      - static_data:/app/staticfiles:ro
+      - media_data:/app/media:ro
+
+    depends_on:
+      - web
+
+    networks:
+      - net
+
+volumes:
+  postgres_data:
+  redis_data:
+  static_data:
+  media_data:
+
+networks:
+  net:
+    driver: bridge
