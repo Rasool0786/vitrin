@@ -26,7 +26,7 @@ export default function About() {
           <div className="grid lg:grid-cols-2 gap-12 lg:gap-16 items-center">
             <div className="aspect-[4/5] rounded-2xl lg:rounded-3xl overflow-hidden shadow-xl">
               <img
-                src="https://images.unsplash.com/photo-1558171813-4c088753af8f?w=700&q=80"
+                src="#"
                 alt="درباره ویترین"
                 className="w-full h-full object-cover"
                 loading="lazy"
@@ -152,7 +152,7 @@ export default function About() {
             </div>
             <div className="order-1 lg:order-2 aspect-[4/5] rounded-2xl lg:rounded-3xl overflow-hidden shadow-xl">
               <img
-                src="https://images.unsplash.com/photo-1558769132-cb1aea458c5e?w=700&q=80"
+                src="#"
                 alt="تعهد کیفیت ویترین"
                 className="w-full h-full object-cover"
                 loading="lazy"
