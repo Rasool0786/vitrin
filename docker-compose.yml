@@ -97,13 +97,27 @@ services:
 
     ports:
       - "80:80"
+      - "443:443"
 
     volumes:
       - static_data:/app/staticfiles:ro
       - media_data:/app/media:ro
+      - certbot_www:/var/www/certbot:ro
+      - certbot_etc:/etc/letsencrypt:ro
 
     depends_on:
       - web
+
+    networks:
+      - net
+
+  certbot:
+    image: certbot/certbot
+    container_name: vitrin-certbot
+
+    volumes:
+      - certbot_www:/var/www/certbot
+      - certbot_etc:/etc/letsencrypt
 
     networks:
       - net
@@ -113,6 +127,8 @@ volumes:
   redis_data:
   static_data:
   media_data:
+  certbot_www:
+  certbot_etc:
 
 networks:
   net:

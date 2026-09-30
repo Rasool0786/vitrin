@@ -157,7 +157,7 @@ export default function Home() {
               <div className="absolute -inset-4 bg-gradient-to-br from-brand-200/40 to-transparent rounded-[2rem] blur-2xl pointer-events-none" />
               <div className="relative aspect-[4/5] lg:aspect-[3/4] rounded-2xl lg:rounded-[1.75rem] overflow-hidden shadow-2xl ring-1 ring-stone-900/5">
                 <img
-                  src="https://images.unsplash.com/photo-1490481651871-ab68de25d43d?w=900&q=85"
+                  src="#"
                   alt="مدل لباس ویترین - کالکشن جدید"
                   className="w-full h-full object-cover object-center hover:scale-105 transition-transform duration-700"
                   loading="eager"
@@ -264,7 +264,7 @@ export default function Home() {
           <div className="relative rounded-3xl overflow-hidden bg-gradient-to-l from-brand-800 via-brand-700 to-brand-600 text-white">
             <div className="absolute inset-0 opacity-20">
               <img
-                src="https://images.unsplash.com/photo-1445205170230-053b83016050?w=1200&q=80"
+                src="#"
                 alt="کالکشن پاییزه ویترین"
                 className="w-full h-full object-cover"
                 loading="lazy"
@@ -327,7 +327,7 @@ export default function Home() {
             <div className="relative">
               <div className="aspect-[4/5] rounded-2xl lg:rounded-3xl overflow-hidden shadow-xl">
                 <img
-                  src="https://images.unsplash.com/photo-1558171813-4c088753af8f?w=700&q=80"
+                  src="#"
                   alt="درباره ویترین"
                   className="w-full h-full object-cover"
                   loading="lazy"
@@ -353,45 +353,6 @@ export default function Home() {
               </Link>
             </div>
           </div>
-        </div>
-      </section>
-
-      {/* NEWSLETTER */}
-      <section className="py-16 lg:py-20">
-        <div className="max-w-2xl mx-auto px-4 sm:px-6 text-center">
-          <h2 className="text-2xl sm:text-3xl font-bold text-stone-900 mb-3">
-            از جدیدترین‌ها باخبر باشید
-          </h2>
-          <p className="text-stone-500 mb-8 leading-relaxed">
-            برای اطلاع از کالکشن‌های جدید، تخفیف‌ها و پیشنهادهای ویژه ایمیل خود را ثبت کنید.
-          </p>
-          <form onSubmit={handleNewsletter} className="flex flex-col sm:flex-row gap-3 max-w-md mx-auto" noValidate>
-            <div className="flex-1 relative">
-              <input
-                type="email"
-                value={newsletterEmail}
-                onChange={(e) => setNewsletterEmail(e.target.value)}
-                placeholder="ایمیل شما"
-                className="w-full px-5 py-3.5 text-sm bg-stone-100 border border-stone-200 rounded-full outline-none focus:border-brand-500 transition-colors"
-                aria-label="ایمیل"
-                required
-              />
-              {newsletterError && (
-                <p className="absolute -bottom-6 right-4 text-xs text-red-500">{newsletterError}</p>
-              )}
-            </div>
-            <button
-              type="submit"
-              className="px-8 py-3.5 bg-stone-900 text-white font-medium rounded-full hover:bg-stone-800 transition-colors whitespace-nowrap"
-            >
-              عضویت
-            </button>
-          </form>
-          {newsletterSuccess && (
-            <p className="mt-6 text-sm text-green-600">
-              با موفقیت ثبت شد. ممنون از همراهی شما!
-            </p>
-          )}
         </div>
       </section>
 

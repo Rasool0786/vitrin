@@ -27,6 +27,8 @@ class OrderViewSet(
         qs = Order.objects.prefetch_related("items").select_related("user")
         if self.request.user.is_staff:
             return qs
+        if getattr(self, 'swagger_fake_view', False):
+            return qs.none()
         return qs.filter(user=self.request.user)
 
     def get_serializer_class(self):
