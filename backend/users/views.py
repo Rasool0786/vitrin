@@ -222,8 +222,6 @@ class AddressViewSet(
     ]
 
     def get_queryset(self):
-        if getattr(self, 'swagger_fake_view', False):
-              return Address.objects.none()
         return Address.objects.filter(
             user=self.request.user
         )

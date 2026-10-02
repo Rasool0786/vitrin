@@ -38,7 +38,7 @@ export default function Dashboard() {
   useEffect(() => {
     if (user) {
       setProfile({
-        name: user.name || '',
+        name: user.name || user.first_name || '',
         email: user.email || '',
         phone: user.phone || '',
         address: user.address || '',
@@ -57,11 +57,13 @@ export default function Dashboard() {
 
   useEffect(() => {
     if (active !== 'wishlist' || !user) return;
-    if (wishlistIds.size === 0) { setWishProducts([]); return; }
-    API.products({ page_size: 200 })
+    if (wishlistIds.size === 0) {
+      setWishProducts([]);
+      return;
+    }
+    API.wishlist()
       .then((data) => {
-        const all = data.results || data;
-        setWishProducts(all.filter((p) => wishlistIds.has(p.id)));
+        setWishProducts(data.results || data || []);
       })
       .catch(() => setWishProducts([]));
   }, [active, wishlistIds, user]);
@@ -87,8 +89,14 @@ export default function Dashboard() {
 
   const handlePassword = async (e) => {
     e.preventDefault();
-    if (passwords.p1.length < 6) { showToast('رمز حداقل ۶ کاراکتر باشد.', 'error'); return; }
-    if (passwords.p1 !== passwords.p2) { showToast('تکرار رمز مطابقت ندارد.', 'error'); return; }
+    if (passwords.p1.length < 6) {
+      showToast('رمز حداقل ۶ کاراکتر باشد.', 'error');
+      return;
+    }
+    if (passwords.p1 !== passwords.p2) {
+      showToast('تکرار رمز مطابقت ندارد.', 'error');
+      return;
+    }
     try {
       await API.changePassword({ password: passwords.p1 });
       setPasswords({ p1: '', p2: '' });
@@ -118,11 +126,15 @@ export default function Dashboard() {
     );
   }
 
-  const cartCount = cart.items.reduce((s, i) => s + (i.quantity || 1), 0);
+  // نام نمایشی کاربر
+  const displayName = user.name || user.first_name || user.email?.split('@')[0] || 'کاربر';
+
+  const cartCount = cart.items?.reduce((s, i) => s + (i.quantity || 1), 0) || 0;
 
   return (
     <main className="max-w-8xl mx-auto px-4 sm:px-6 lg:px-8 py-8 lg:py-12">
       <div className="flex flex-col lg:flex-row gap-8">
+        {/* سایدبار */}
         <aside className="lg:w-56 flex-shrink-0">
           <nav className="bg-white rounded-2xl border border-stone-200 p-3 space-y-1 lg:sticky lg:top-24">
             {SECTIONS.map((s) => (
@@ -131,7 +143,7 @@ export default function Dashboard() {
                 type="button"
                 onClick={() => setActive(s.key)}
                 className={
-                  'dash-nav w-full text-right px-4 py-2.5 text-sm rounded-xl font-medium transition-colors ' +
+                  'w-full text-right px-4 py-2.5 text-sm rounded-xl font-medium transition-colors ' +
                   (active === s.key
                     ? 'bg-stone-100 text-stone-900'
                     : 'hover:bg-stone-100')
@@ -140,12 +152,9 @@ export default function Dashboard() {
                 {s.label}
               </button>
             ))}
-            <Link
-              to="/product-form"
-              className="block w-full text-right px-4 py-2.5 text-sm rounded-xl font-medium hover:bg-stone-100"
-            >
-              مدیریت محصولات
-            </Link>
+
+            {/* مدیریت محصولات حذف شد */}
+
             <Link
               to="/logout"
               className="block w-full text-right px-4 py-2.5 text-sm rounded-xl font-medium text-rose-600 hover:bg-rose-50"
@@ -155,11 +164,12 @@ export default function Dashboard() {
           </nav>
         </aside>
 
+        {/* محتوا */}
         <div className="flex-1 min-w-0">
           {active === 'overview' && (
             <section>
               <h1 className="text-2xl font-bold mb-1">
-                سلام، <span>{user.name || 'کاربر'}</span>
+                سلام، <span>{displayName}</span>
               </h1>
               <p className="text-sm text-stone-500 mb-8">{user.email}</p>
 
@@ -198,7 +208,9 @@ export default function Dashboard() {
                 </div>
               ) : (
                 <div className="space-y-3">
-                  {orders.map((o) => <OrderCard key={o.code || o.id} order={o} />)}
+                  {orders.map((o) => (
+                    <OrderCard key={o.code || o.id} order={o} />
+                  ))}
                 </div>
               )}
             </section>
@@ -274,7 +286,9 @@ export default function Dashboard() {
                 </p>
               ) : (
                 <div className="grid grid-cols-2 md:grid-cols-3 gap-4">
-                  {wishProducts.map((p) => <ProductCard key={p.id} product={p} />)}
+                  {wishProducts.map((item) => (
+                    <ProductCard key={item.id || item.product?.id} product={item.product || item} />
+                  ))}
                 </div>
               )}
             </section>
@@ -320,14 +334,13 @@ export default function Dashboard() {
                 <div className="bg-white rounded-2xl border border-rose-200 p-6">
                   <h3 className="font-semibold text-sm text-rose-600 mb-2">حذف حساب کاربری</h3>
                   <p className="text-sm text-stone-500 mb-4">
-                    با حذف حساب، اطلاعات ورود شما پاک می‌شود.
+                    با حذف حساب، تمام اطلاعات شما پاک می‌شود و قابل بازگشت نیست.
                   </p>
                   <button
-                    type="button"
                     onClick={handleDelete}
-                    className="px-6 py-3 bg-rose-600 text-white font-medium rounded-full text-sm hover:bg-rose-700"
+                    className="px-5 py-2.5 bg-rose-600 text-white text-sm font-medium rounded-full hover:bg-rose-700"
                   >
-                    حذف دائمی حساب
+                    حذف حساب
                   </button>
                 </div>
               </div>
@@ -339,52 +352,50 @@ export default function Dashboard() {
   );
 }
 
+// کامپوننت‌های کمکی
 function StatCard({ label, value }) {
   return (
-    <div className="bg-white rounded-2xl border border-stone-200 p-5">
-      <p className="text-sm text-stone-500 mb-1">{label}</p>
-      <p className="text-2xl font-bold">{value}</p>
+    <div className="bg-white rounded-2xl border border-stone-200 p-5 text-center">
+      <p className="text-2xl font-bold text-stone-900">{value}</p>
+      <p className="text-sm text-stone-500 mt-1">{label}</p>
     </div>
   );
 }
 
 function OrdersPreview({ orders }) {
-  if (!orders.length) {
+  if (!orders || orders.length === 0) {
     return (
-      <p className="text-sm text-stone-500">
-        سفارشی نیست.{' '}
-        <Link to="/shop" className="text-brand-600 hover:underline">خرید کنید</Link>
-      </p>
+      <div className="text-sm text-stone-500 py-6 text-center bg-white rounded-2xl border border-stone-200">
+        هنوز سفارشی ندارید.
+      </div>
     );
   }
+
   return (
     <div className="space-y-3">
-      {orders.map((o) => <OrderCard key={o.code || o.id} order={o} />)}
+      {orders.map((o) => (
+        <OrderCard key={o.code || o.id} order={o} />
+      ))}
     </div>
   );
 }
 
 function OrderCard({ order }) {
-  const date = order.date || order.created_at;
-  const status = order.status || 'در حال پردازش';
-  const code = order.code || order.order_code;
   return (
-    <div className="bg-white rounded-2xl border border-stone-200 p-4 flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+    <Link
+      to={`/orders/${order.code || order.id}`}
+      className="flex items-center justify-between bg-white rounded-2xl border border-stone-200 p-4 hover:border-stone-300 transition-colors"
+    >
       <div>
-        <p className="font-medium text-sm">{code}</p>
+        <p className="font-medium text-sm">سفارش #{order.code || order.id}</p>
         <p className="text-xs text-stone-500 mt-0.5">
-          {date ? new Date(date).toLocaleDateString('fa-IR') : ''} · {status}
+          {new Date(order.created_at || order.datetime_created).toLocaleDateString('fa-IR')}
         </p>
       </div>
-      <div className="flex items-center gap-3">
-        <p className="font-semibold text-sm">{formatPrice(order.total || 0)}</p>
-        <Link
-          to={`/orders/${encodeURIComponent(code)}`}
-          className="text-xs font-medium px-3 py-1.5 rounded-full bg-stone-900 text-white hover:opacity-90"
-        >
-          جزئیات سفارش
-        </Link>
+      <div className="text-left">
+        <p className="font-semibold text-sm">{formatPrice(order.total || order.final_price || 0)}</p>
+        <p className="text-xs text-stone-500 mt-0.5">{order.status || 'در حال پردازش'}</p>
       </div>
-    </div>
+    </Link>
   );
 }

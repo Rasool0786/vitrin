@@ -23,13 +23,12 @@ export default function Footer() {
 
           {/* Brand */}
           <div className="col-span-2 lg:col-span-1">
-            <Link to="/" className="flex items-center gap-3 mb-3">
+            <Link to="/" className="flex items-center gap-3 mb-4">
               <img
                 src="/logo.png"
                 alt="ویترین"
-                className="h-25 w-auto brightness-0 invert"
+                className="h-12 sm:h-14 lg:h-16 w-auto brightness-0 invert object-contain"
               />
-              {/* <span className="text-2xl font-bold text-white">ویترین</span> */}
             </Link>
             <p className="text-sm leading-relaxed text-stone-400">
               فروشگاه لباس زنانه با تمرکز بر کیفیت، سادگی و طراحی ماندگار. استایل برای هر لحظه.
@@ -112,7 +111,7 @@ export default function Footer() {
             </ul>
           </div>
 
-          {/* Enamad — next to Contact */}
+          {/* Enamad */}
           <div className="flex items-start justify-center lg:justify-end">
             <a
               referrerPolicy="origin"

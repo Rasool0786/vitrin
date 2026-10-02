@@ -38,7 +38,7 @@ export default function Header({ onOpenDrawer }) {
     return () => window.removeEventListener('scroll', onScroll);
   }, []);
 
-  const cartCount = cart.items.reduce((s, i) => s + (i.quantity || 1), 0);
+  const cartCount = cart.items?.reduce((s, i) => s + (i.quantity || 1), 0) || 0;
   const wishCount = wishlistIds.size;
 
   const handleSearch = (value) => {
@@ -76,12 +76,12 @@ export default function Header({ onOpenDrawer }) {
             </svg>
           </button>
 
-          {/* Logo */}
-          <Link to="/" className="flex items-center gap-3 group">
+          {/* Logo - بزرگ‌تر */}
+          <Link to="/" className="flex items-center gap-2 sm:gap-3 group">
             <img
               src="/logo.png"
               alt="ویترین"
-              className="h-25 lg:h-12 w-auto"
+              className="h-12 sm:h-14 lg:h-16 w-auto object-contain"
             />
             <div className="hidden sm:flex flex-col">
               <span className="text-xl lg:text-2xl font-bold tracking-tight text-stone-900 group-hover:text-brand-600 transition-colors">
@@ -146,12 +146,11 @@ export default function Header({ onOpenDrawer }) {
               <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="1.5" d="M4.318 6.318a4.5 4.5 0 000 6.364L12 20.364l7.682-7.682a4.5 4.5 0 00-6.364-6.364L12 7.636l-1.318-1.318a4.5 4.5 0 00-6.364 0z" />
               </svg>
-              <span
-                id="wishlist-count"
-                className="absolute -top-0.5 -left-0.5 flex items-center justify-center w-4 h-4 text-[10px] font-bold text-white bg-brand-600 rounded-full"
-              >
-                {toPersianDigits(wishCount)}
-              </span>
+              {wishCount > 0 && (
+                <span className="absolute -top-0.5 -left-0.5 flex items-center justify-center w-4 h-4 text-[10px] font-bold text-white bg-brand-600 rounded-full">
+                  {toPersianDigits(wishCount)}
+                </span>
+              )}
             </Link>
 
             {/* Cart */}
@@ -164,19 +163,18 @@ export default function Header({ onOpenDrawer }) {
               <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="1.5" d="M16 11V7a4 4 0 00-8 0v4M5 9h14l1 12H4L5 9z" />
               </svg>
-              <span
-                id="cart-count"
-                className="absolute -top-0.5 -left-0.5 flex items-center justify-center w-4 h-4 text-[10px] font-bold text-white bg-brand-600 rounded-full"
-              >
-                {toPersianDigits(cartCount)}
-              </span>
+              {cartCount > 0 && (
+                <span className="absolute -top-0.5 -left-0.5 flex items-center justify-center w-4 h-4 text-[10px] font-bold text-white bg-brand-600 rounded-full">
+                  {toPersianDigits(cartCount)}
+                </span>
+              )}
             </Link>
 
-            {/* Account */}
+            {/* Account - همیشه دیده می‌شود */}
             <Link
               to={user ? '/dashboard' : '/login'}
               id="account-link"
-              className="p-2 rounded-lg hover:bg-stone-100 transition-colors hidden sm:flex items-center"
+              className="p-2 rounded-lg hover:bg-stone-100 transition-colors flex items-center"
               aria-label="حساب کاربری"
               title="حساب کاربری"
             >
@@ -190,14 +188,10 @@ export default function Header({ onOpenDrawer }) {
 
       {/* Mobile Search Overlay */}
       {mobileSearchOpen && (
-        <div
-          id="mobile-search-overlay"
-          className="absolute inset-x-0 top-full bg-white border-b border-stone-200 p-4 shadow-lg"
-        >
+        <div className="absolute inset-x-0 top-full bg-white border-b border-stone-200 p-4 shadow-lg z-50">
           <div className="relative">
             <input
               type="search"
-              id="mobile-search"
               value={searchValue}
               onChange={(e) => handleSearch(e.target.value)}
               placeholder="دنبال چه چیزی می‌گردید؟"
@@ -205,10 +199,7 @@ export default function Header({ onOpenDrawer }) {
               aria-label="جستجو"
               autoFocus
             />
-            <svg
-              className="absolute right-3 top-1/2 -translate-y-1/2 w-5 h-5 text-stone-400"
-              fill="none" stroke="currentColor" viewBox="0 0 24 24"
-            >
+            <svg className="absolute right-3 top-1/2 -translate-y-1/2 w-5 h-5 text-stone-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
             </svg>
             <button

@@ -97,7 +97,6 @@ services:
 
     ports:
       - "80:80"
-      - "443:443"
 
     volumes:
       - static_data:/app/staticfiles:ro
