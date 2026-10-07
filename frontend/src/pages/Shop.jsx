@@ -1,5 +1,5 @@
-import { useState, useEffect, useCallback, useRef } from 'react';
-import { useSearchParams, Link } from 'react-router-dom';
+import { useState, useEffect, useCallback } from 'react';
+import { useSearchParams } from 'react-router-dom';
 import { API, toPersianDigits } from '../lib/api.js';
 import ProductCard from '../components/ProductCard.jsx';
 
@@ -14,63 +14,47 @@ const PRICE_RANGES = [
 ];
 
 const SORT_OPTIONS = [
-  { value: 'all', label: 'پیش‌فرض' },
-  { value: 'newest', label: 'جدیدترین' },
-  { value: 'cheapest', label: 'ارزان‌ترین' },
-  { value: 'expensive', label: 'گران‌ترین' },
-  { value: 'discount', label: 'بیشترین تخفیف' },
+  { value: '', label: 'پیش‌فرض' },
+  { value: '-datetime_created', label: 'جدیدترین' },
+  { value: 'price', label: 'ارزان‌ترین' },
+  { value: '-price', label: 'گران‌ترین' },
 ];
 
 export default function Shop() {
   const [searchParams, setSearchParams] = useSearchParams();
 
-  // Stateها
   const [categories, setCategories] = useState([]);
-  const [currentCat, setCurrentCat] = useState(searchParams.get('cat') || 'all');
-  const [currentSort, setCurrentSort] = useState(searchParams.get('sort') || 'all');
-  const [currentPrice, setCurrentPrice] = useState(searchParams.get('price') || 'all');
-  const [onlySale, setOnlySale] = useState(searchParams.get('filter') === 'sale');
-  const [onlyNew, setOnlyNew] = useState(searchParams.get('filter') === 'newest');
-  const [searchQuery, setSearchQuery] = useState(searchParams.get('search') || '');
-  const [currentPage, setCurrentPage] = useState(Math.max(1, Number(searchParams.get('page')) || 1));
-
   const [products, setProducts] = useState([]);
   const [totalCount, setTotalCount] = useState(0);
   const [loading, setLoading] = useState(true);
   const [mobileFiltersOpen, setMobileFiltersOpen] = useState(false);
 
-  const searchDebounce = useRef(null);
+  // خواندن از URL
+  const currentCat = searchParams.get('category') || '';
+  const searchQuery = searchParams.get('search') || '';
+  const currentPrice = searchParams.get('price') || 'all';
+  const currentSort = searchParams.get('ordering') || '';
+  const inStock = searchParams.get('in_stock') === 'true';
+  const currentPage = Math.max(1, Number(searchParams.get('page')) || 1);
 
-  // گرفتن دسته‌بندی‌ها از API
+  // گرفتن دسته‌بندی‌ها
   useEffect(() => {
     API.categories()
-      .then((data) => {
-        const list = data.results || data || [];
-        setCategories(list);
-      })
+      .then((data) => setCategories(data.results || data || []))
       .catch(() => setCategories([]));
   }, []);
 
-  // همگام‌سازی با URL
-  useEffect(() => {
-    setCurrentCat(searchParams.get('cat') || 'all');
-    setSearchQuery(searchParams.get('search') || '');
-    setOnlySale(searchParams.get('filter') === 'sale');
-    setOnlyNew(searchParams.get('filter') === 'newest');
-    setCurrentSort(searchParams.get('sort') || 'all');
-    setCurrentPrice(searchParams.get('price') || 'all');
-    setCurrentPage(Math.max(1, Number(searchParams.get('page')) || 1));
-  }, [searchParams]);
-
-  // ساخت پارامترهای API
+  // ساخت پارامترهای API (دقیقاً مطابق ProductFilter)
   const buildParams = useCallback(() => {
     const params = {
       page: currentPage,
       page_size: PER_PAGE,
     };
 
-    if (currentCat !== 'all') params.category = currentCat;
+    if (currentCat) params.category = currentCat;
     if (searchQuery.trim()) params.search = searchQuery.trim();
+    if (inStock) params.in_stock = true;
+    if (currentSort) params.ordering = currentSort;
 
     if (currentPrice !== 'all') {
       const [min, max] = currentPrice.split('-');
@@ -78,28 +62,8 @@ export default function Shop() {
       params.max_price = max;
     }
 
-    if (onlySale) params.has_discount = true;
-    if (onlyNew) params.is_new = true;
-
-    switch (currentSort) {
-      case 'newest':
-        params.ordering = '-datetime_created';
-        break;
-      case 'cheapest':
-        params.ordering = 'price';
-        break;
-      case 'expensive':
-        params.ordering = '-price';
-        break;
-      case 'discount':
-        params.ordering = '-discount';
-        break;
-      default:
-        break;
-    }
-
     return params;
-  }, [currentCat, currentSort, currentPrice, onlySale, onlyNew, searchQuery, currentPage]);
+  }, [currentCat, searchQuery, currentPrice, currentSort, inStock, currentPage]);
 
   // گرفتن محصولات
   useEffect(() => {
@@ -121,24 +85,21 @@ export default function Shop() {
         if (!cancelled) setLoading(false);
       });
 
-    return () => {
-      cancelled = true;
-    };
+    return () => { cancelled = true; };
   }, [buildParams]);
 
-  // به‌روزرسانی URL وقتی فیلتر تغییر می‌کند
+  // به‌روزرسانی URL
   const updateURL = (updates) => {
     const params = new URLSearchParams(searchParams);
 
     Object.entries(updates).forEach(([key, value]) => {
-      if (value === 'all' || value === false || value === '' || value === 1) {
+      if (!value || value === 'all' || value === false) {
         params.delete(key);
       } else {
         params.set(key, value);
       }
     });
 
-    // صفحه را وقتی فیلتر عوض می‌شود ریست کن
     if (!('page' in updates)) {
       params.delete('page');
     }
@@ -146,28 +107,16 @@ export default function Shop() {
     setSearchParams(params);
   };
 
-  const handleSearchChange = (value) => {
-    setSearchQuery(value);
-    clearTimeout(searchDebounce.current);
-    searchDebounce.current = setTimeout(() => {
-      updateURL({ search: value.trim(), page: 1 });
-    }, 500);
-  };
-
-  const resetAllFilters = () => {
-    setSearchParams({});
-  };
+  const resetAllFilters = () => setSearchParams({});
 
   const totalPages = Math.ceil(totalCount / PER_PAGE) || 1;
 
   const getPageTitle = () => {
-    if (searchQuery) return { title: `نتایج جستجو: ${searchQuery}`, subtitle: `${toPersianDigits(totalCount)} محصول یافت شد` };
-    if (currentCat !== 'all') {
+    if (searchQuery) return { title: `جستجو: ${searchQuery}`, subtitle: `${toPersianDigits(totalCount)} محصول` };
+    if (currentCat) {
       const cat = categories.find((c) => c.slug === currentCat);
-      return { title: cat?.name || currentCat, subtitle: `محصولات ${cat?.name || currentCat}` };
+      return { title: cat?.name || currentCat, subtitle: `محصولات ${cat?.name || ''}` };
     }
-    if (onlySale) return { title: 'تخفیف‌ها', subtitle: 'محصولات با تخفیف ویژه' };
-    if (onlyNew) return { title: 'جدیدترین‌ها', subtitle: 'تازه‌های ویترین' };
     return { title: 'فروشگاه', subtitle: 'همه محصولات ویترین' };
   };
 
@@ -182,28 +131,33 @@ export default function Shop() {
         </button>
       </div>
 
-      {/* سرچ داخل فیلتر */}
+      {/* سرچ */}
       <div>
-        <h3 className="font-medium text-sm mb-3 text-stone-700">جستجو</h3>
+        <h3 className="font-medium text-sm mb-3 text-stone-700">جستجو در عنوان</h3>
         <input
           type="search"
-          value={searchQuery}
-          onChange={(e) => handleSearchChange(e.target.value)}
-          placeholder="نام محصول..."
+          defaultValue={searchQuery}
+          onKeyDown={(e) => {
+            if (e.key === 'Enter') {
+              updateURL({ search: e.target.value.trim(), page: 1 });
+            }
+          }}
+          placeholder="مثلاً شلوار..."
           className="w-full px-3 py-2.5 text-sm bg-stone-50 border border-stone-200 rounded-xl outline-none focus:border-brand-500"
         />
+        <p className="text-xs text-stone-400 mt-1">Enter بزنید</p>
       </div>
 
       <hr className="border-stone-200" />
 
-      {/* دسته‌بندی از API */}
+      {/* دسته‌بندی */}
       <div>
         <h3 className="font-medium text-sm mb-3 text-stone-700">دسته‌بندی</h3>
-        <div className="space-y-1 max-h-64 overflow-y-auto">
+        <div className="space-y-1 max-h-60 overflow-y-auto">
           <button
-            onClick={() => updateURL({ cat: 'all', page: 1 })}
+            onClick={() => updateURL({ category: '', page: 1 })}
             className={`w-full text-right px-3 py-2 text-sm rounded-lg transition-colors hover:bg-stone-100 ${
-              currentCat === 'all' ? 'bg-stone-900 text-white' : ''
+              !currentCat ? 'bg-stone-900 text-white' : ''
             }`}
           >
             همه
@@ -211,15 +165,12 @@ export default function Shop() {
           {categories.map((c) => (
             <button
               key={c.slug}
-              onClick={() => updateURL({ cat: c.slug, page: 1 })}
+              onClick={() => updateURL({ category: c.slug, page: 1 })}
               className={`w-full text-right px-3 py-2 text-sm rounded-lg transition-colors hover:bg-stone-100 ${
                 currentCat === c.slug ? 'bg-stone-900 text-white' : ''
               }`}
             >
               {c.name}
-              {c.product_count != null && (
-                <span className="text-xs opacity-70 mr-1">({toPersianDigits(c.product_count)})</span>
-              )}
             </button>
           ))}
         </div>
@@ -227,7 +178,7 @@ export default function Shop() {
 
       <hr className="border-stone-200" />
 
-      {/* محدوده قیمت */}
+      {/* قیمت */}
       <div>
         <h3 className="font-medium text-sm mb-3 text-stone-700">محدوده قیمت</h3>
         <div className="space-y-2">
@@ -236,7 +187,6 @@ export default function Shop() {
               <input
                 type="radio"
                 name="price"
-                value={r.value}
                 checked={currentPrice === r.value}
                 onChange={() => updateURL({ price: r.value, page: 1 })}
                 className="accent-brand-600"
@@ -249,29 +199,17 @@ export default function Shop() {
 
       <hr className="border-stone-200" />
 
-      {/* ویژگی‌ها */}
+      {/* موجودی */}
       <div>
-        <h3 className="font-medium text-sm mb-3 text-stone-700">ویژگی‌ها</h3>
-        <div className="space-y-2.5">
-          <label className="flex items-center gap-2 cursor-pointer text-sm">
-            <input
-              type="checkbox"
-              checked={onlySale}
-              onChange={(e) => updateURL({ filter: e.target.checked ? 'sale' : '', page: 1 })}
-              className="accent-brand-600 rounded"
-            />
-            <span>فقط تخفیف‌دار</span>
-          </label>
-          <label className="flex items-center gap-2 cursor-pointer text-sm">
-            <input
-              type="checkbox"
-              checked={onlyNew}
-              onChange={(e) => updateURL({ filter: e.target.checked ? 'newest' : '', page: 1 })}
-              className="accent-brand-600 rounded"
-            />
-            <span>فقط جدید</span>
-          </label>
-        </div>
+        <label className="flex items-center gap-2 cursor-pointer text-sm">
+          <input
+            type="checkbox"
+            checked={inStock}
+            onChange={(e) => updateURL({ in_stock: e.target.checked ? 'true' : '', page: 1 })}
+            className="accent-brand-600 rounded"
+          />
+          <span>فقط کالاهای موجود</span>
+        </label>
       </div>
 
       <hr className="border-stone-200" />
@@ -281,13 +219,11 @@ export default function Shop() {
         <h3 className="font-medium text-sm mb-3 text-stone-700">مرتب‌سازی</h3>
         <select
           value={currentSort}
-          onChange={(e) => updateURL({ sort: e.target.value, page: 1 })}
+          onChange={(e) => updateURL({ ordering: e.target.value, page: 1 })}
           className="w-full px-3 py-2.5 text-sm bg-stone-50 border border-stone-200 rounded-xl outline-none focus:border-brand-500"
         >
           {SORT_OPTIONS.map((o) => (
-            <option key={o.value} value={o.value}>
-              {o.label}
-            </option>
+            <option key={o.value} value={o.value}>{o.label}</option>
           ))}
         </select>
       </div>
@@ -304,42 +240,28 @@ export default function Shop() {
       </div>
 
       <div className="max-w-8xl mx-auto px-4 sm:px-6 lg:px-8 py-8 lg:py-10">
-        {/* دکمه فیلتر موبایل */}
         <div className="lg:hidden mb-4">
           <button
             onClick={() => setMobileFiltersOpen(true)}
-            className="w-full flex items-center justify-center gap-2 py-3 border border-stone-200 rounded-xl text-sm font-medium hover:bg-stone-100 transition-colors"
+            className="w-full flex items-center justify-center gap-2 py-3 border border-stone-200 rounded-xl text-sm font-medium"
           >
-            <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="1.5" d="M3 4a1 1 0 011-1h16a1 1 0 011 1v2.586a1 1 0 01-.293.707l-6.414 6.414a1 1 0 00-.293.707V17l-4 4v-6.586a1 1 0 00-.293-.707L3.293 7.293A1 1 0 013 6.586V4z" />
-            </svg>
             فیلترها و مرتب‌سازی
           </button>
         </div>
 
         <div className="flex flex-col lg:flex-row gap-8">
-          {/* سایدبار دسکتاپ */}
           <aside className="lg:w-72 flex-shrink-0 hidden lg:block">
             <div className="sticky top-24 bg-white rounded-2xl border border-stone-200 p-5">
               <FiltersContent />
             </div>
           </aside>
 
-          {/* فیلتر موبایل */}
           {mobileFiltersOpen && (
             <div className="lg:hidden fixed inset-0 z-50 bg-black/50">
               <div className="absolute bottom-0 inset-x-0 bg-white rounded-t-3xl max-h-[85vh] overflow-y-auto p-5 pb-8">
                 <div className="flex items-center justify-between mb-4">
                   <h2 className="font-semibold text-lg">فیلترها</h2>
-                  <button
-                    onClick={() => setMobileFiltersOpen(false)}
-                    className="p-2 rounded-lg hover:bg-stone-100"
-                    aria-label="بستن"
-                  >
-                    <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M6 18L18 6M6 6l12 12" />
-                    </svg>
-                  </button>
+                  <button onClick={() => setMobileFiltersOpen(false)} className="p-2">✕</button>
                 </div>
                 <FiltersContent />
                 <button
@@ -352,24 +274,13 @@ export default function Shop() {
             </div>
           )}
 
-          {/* لیست محصولات */}
           <div className="flex-1 min-w-0">
-            <div className="flex items-center justify-between mb-6">
-              <p className="text-sm text-stone-500">
-                <span>{toPersianDigits(totalCount)}</span> محصول
-                {totalPages > 1 && (
-                  <span className="mr-2">
-                    (صفحه {toPersianDigits(currentPage)} از {toPersianDigits(totalPages)})
-                  </span>
-                )}
-              </p>
-            </div>
+            <p className="text-sm text-stone-500 mb-6">
+              {toPersianDigits(totalCount)} محصول
+            </p>
 
             {!loading && products.length === 0 ? (
               <div className="text-center py-16">
-                <svg className="w-16 h-16 mx-auto text-stone-300 mb-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="1.5" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
-                </svg>
                 <p className="text-lg font-medium text-stone-600">محصولی پیدا نشد.</p>
                 <button onClick={resetAllFilters} className="mt-4 text-brand-600 font-medium hover:underline">
                   پاک کردن فیلترها
@@ -378,33 +289,27 @@ export default function Shop() {
             ) : (
               <div className="grid grid-cols-2 md:grid-cols-3 gap-4 sm:gap-6">
                 {loading
-                  ? Array(PER_PAGE)
-                      .fill(0)
-                      .map((_, i) => (
-                        <div key={i} className="animate-pulse">
-                          <div className="aspect-[3/4] rounded-xl bg-stone-200" />
-                          <div className="pt-3 space-y-2">
-                            <div className="h-3 w-16 bg-stone-200 rounded" />
-                            <div className="h-4 w-3/4 bg-stone-200 rounded" />
-                            <div className="h-4 w-24 bg-stone-200 rounded" />
-                          </div>
+                  ? Array(12).fill(0).map((_, i) => (
+                      <div key={i} className="animate-pulse">
+                        <div className="aspect-[3/4] rounded-xl bg-stone-200" />
+                        <div className="pt-3 space-y-2">
+                          <div className="h-3 w-16 bg-stone-200 rounded" />
+                          <div className="h-4 w-3/4 bg-stone-200 rounded" />
                         </div>
-                      ))
+                      </div>
+                    ))
                   : products.map((p) => <ProductCard key={p.id} product={p} />)}
               </div>
             )}
 
-            {/* صفحه‌بندی */}
             {totalPages > 1 && !loading && (
               <div className="flex justify-center gap-2 mt-10">
                 {Array.from({ length: totalPages }, (_, i) => i + 1).map((page) => (
                   <button
                     key={page}
                     onClick={() => updateURL({ page })}
-                    className={`w-10 h-10 rounded-full text-sm font-medium transition-colors ${
-                      currentPage === page
-                        ? 'bg-stone-900 text-white'
-                        : 'bg-stone-100 hover:bg-stone-200'
+                    className={`w-10 h-10 rounded-full text-sm font-medium ${
+                      currentPage === page ? 'bg-stone-900 text-white' : 'bg-stone-100'
                     }`}
                   >
                     {toPersianDigits(page)}

@@ -1,25 +1,23 @@
 import { useEffect, useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { useApp } from '../contexts/AppContext.jsx';
-import { formatPrice, toPersianDigits, productImage } from '../lib/api.js';
+import { formatPrice, toPersianDigits } from '../lib/api.js';
 
 export default function Cart() {
   const navigate = useNavigate();
-  const {
-    cart,
-    refreshCart,
-    updateCartItem,
-    removeCartItem,
-    showToast,
-  } = useApp();
+  const { cart, refreshCart, updateCartItem, removeCartItem, showToast } = useApp();
 
   const [loading, setLoading] = useState(true);
-  const [updating, setUpdating] = useState(null); // variant_id که در حال آپدیت است
+  const [updating, setUpdating] = useState(null);
 
   useEffect(() => {
+    let active = true;
     setLoading(true);
-    refreshCart().finally(() => setLoading(false));
-  }, [refreshCart]);
+    refreshCart().finally(() => {
+      if (active) setLoading(false);
+    });
+    return () => { active = false; };
+  }, []); // فقط یک بار اجرا شود
 
   const items = cart?.items || [];
   const isEmpty = items.length === 0;
@@ -43,8 +41,6 @@ export default function Cart() {
     setUpdating(variantId);
     try {
       await updateCartItem(variantId, newQty);
-    } catch (err) {
-      showToast(err.message || 'خطا در به‌روزرسانی تعداد', 'error');
     } finally {
       setUpdating(null);
     }
@@ -54,9 +50,6 @@ export default function Cart() {
     setUpdating(variantId);
     try {
       await removeCartItem(variantId);
-      showToast('محصول از سبد حذف شد.');
-    } catch (err) {
-      showToast(err.message || 'خطا در حذف محصول', 'error');
     } finally {
       setUpdating(null);
     }
@@ -73,9 +66,7 @@ export default function Cart() {
   return (
     <main className="min-h-[70vh]">
       <div className="max-w-8xl mx-auto px-4 sm:px-6 lg:px-8 py-8 lg:py-12">
-        <h1 className="text-2xl sm:text-3xl font-bold text-stone-900 mb-8">
-          سبد خرید
-        </h1>
+        <h1 className="text-2xl sm:text-3xl font-bold text-stone-900 mb-8">سبد خرید</h1>
 
         {isEmpty ? (
           <div className="text-center py-20">
@@ -93,20 +84,75 @@ export default function Cart() {
           </div>
         ) : (
           <div className="grid lg:grid-cols-3 gap-8">
-            {/* لیست آیتم‌ها */}
             <div className="lg:col-span-2 space-y-4">
               {items.map((item) => (
-                <CartItem
+                <div
                   key={item.variant_id}
-                  item={item}
-                  isUpdating={updating === item.variant_id}
-                  onQtyChange={handleQtyChange}
-                  onRemove={handleRemove}
-                />
+                  className={`flex gap-4 bg-white rounded-2xl border border-stone-200 p-4 transition-opacity ${
+                    updating === item.variant_id ? 'opacity-60' : ''
+                  }`}
+                >
+                  <div className="w-24 h-28 sm:w-28 sm:h-32 flex-shrink-0 rounded-xl overflow-hidden bg-stone-100 flex items-center justify-center text-stone-400 text-xs">
+                    بدون تصویر
+                  </div>
+
+                  <div className="flex-1 flex flex-col min-w-0">
+                    <div className="flex justify-between gap-2">
+                      <div className="min-w-0">
+                        <h3 className="font-medium text-sm sm:text-base">
+                          <Link
+                            to={`/product/${encodeURIComponent(item.product_slug)}`}
+                            className="hover:text-brand-600"
+                          >
+                            {item.product_title}
+                          </Link>
+                        </h3>
+                        <p className="text-xs text-stone-500 mt-1">
+                          {item.color} · {item.size}
+                        </p>
+                      </div>
+
+                      <button
+                        onClick={() => handleRemove(item.variant_id)}
+                        disabled={updating === item.variant_id}
+                        className="p-1.5 text-stone-400 hover:text-rose-600 transition-colors"
+                        aria-label="حذف"
+                      >
+                        <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="1.5" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
+                        </svg>
+                      </button>
+                    </div>
+
+                    <div className="mt-auto flex items-center justify-between pt-3">
+                      <div className="flex items-center gap-2 border border-stone-200 rounded-full">
+                        <button
+                          onClick={() => handleQtyChange(item.variant_id, item.quantity - 1)}
+                          disabled={updating === item.variant_id}
+                          className="w-8 h-8 flex items-center justify-center text-stone-500 hover:text-stone-900 disabled:opacity-50"
+                        >
+                          −
+                        </button>
+                        <span className="w-8 text-center text-sm font-medium">
+                          {toPersianDigits(item.quantity)}
+                        </span>
+                        <button
+                          onClick={() => handleQtyChange(item.variant_id, item.quantity + 1)}
+                          disabled={updating === item.variant_id}
+                          className="w-8 h-8 flex items-center justify-center text-stone-500 hover:text-stone-900 disabled:opacity-50"
+                        >
+                          +
+                        </button>
+                      </div>
+                      <span className="font-semibold text-sm">
+                        {formatPrice(item.line_total || item.final_price * item.quantity)}
+                      </span>
+                    </div>
+                  </div>
+                </div>
               ))}
             </div>
 
-            {/* خلاصه سفارش */}
             <div className="lg:col-span-1">
               <div className="bg-white rounded-2xl border border-stone-200 p-6 sticky top-24">
                 <h2 className="font-semibold text-lg mb-4">خلاصه سفارش</h2>
@@ -115,40 +161,29 @@ export default function Cart() {
                     <span className="text-stone-500">جمع جزء</span>
                     <span>{formatPrice(subtotal)}</span>
                   </div>
-
                   {discountAmount > 0 && (
                     <div className="flex justify-between text-rose-600">
                       <span>تخفیف</span>
                       <span>-{formatPrice(discountAmount)}</span>
                     </div>
                   )}
-
                   <div className="flex justify-between">
                     <span className="text-stone-500">هزینه ارسال</span>
-                    <span>
-                      {total >= 2000000 ? 'رایگان' : 'محاسبه در مرحله بعد'}
-                    </span>
+                    <span>{total >= 2000000 ? 'رایگان' : 'محاسبه در مرحله بعد'}</span>
                   </div>
-
                   <hr className="border-stone-200" />
-
                   <div className="flex justify-between font-semibold text-base">
                     <span>مبلغ قابل پرداخت</span>
                     <span>{formatPrice(total)}</span>
                   </div>
                 </div>
-
                 <button
                   onClick={handleCheckout}
                   className="w-full mt-6 py-3.5 bg-stone-900 text-white font-medium rounded-full hover:bg-stone-800 transition-colors"
                 >
                   ادامه و پرداخت
                 </button>
-
-                <Link
-                  to="/shop"
-                  className="block text-center mt-3 text-sm text-stone-500 hover:text-stone-800"
-                >
+                <Link to="/shop" className="block text-center mt-3 text-sm text-stone-500 hover:text-stone-800">
                   ادامه خرید
                 </Link>
               </div>
@@ -157,91 +192,5 @@ export default function Cart() {
         )}
       </div>
     </main>
-  );
-}
-
-function CartItem({ item, isUpdating, onQtyChange, onRemove }) {
-  // بک‌اند فیلدهای flat می‌دهد
-  const title = item.product_title || item.product?.title || 'محصول';
-  const slug = item.product_slug || item.product?.slug || '';
-  const color = item.color || item.variant?.color?.name || '';
-  const size = item.size || item.variant?.size?.name || '';
-  const price = item.final_price || item.product?.final_price || item.product?.price || 0;
-  const quantity = item.quantity || 1;
-  const lineTotal = price * quantity;
-
-  // عکس: اگر بک‌اند عکس نداده، از placeholder استفاده می‌کنیم
-  const img = item.main_image || item.product?.main_image || productImage(item.product || {});
-
-  const detailUrl = slug ? `/product/${encodeURIComponent(slug)}` : '/shop';
-
-  return (
-    <div className={`flex gap-4 bg-white rounded-2xl border border-stone-200 p-4 transition-opacity ${isUpdating ? 'opacity-60' : ''}`}>
-      <Link
-        to={detailUrl}
-        className="w-24 h-28 sm:w-28 sm:h-32 flex-shrink-0 rounded-xl overflow-hidden bg-stone-100"
-      >
-        <img
-          src={img}
-          alt={title}
-          className="w-full h-full object-cover"
-          onError={(e) => {
-            e.target.src = 'https://via.placeholder.com/300x400?text=ویترین';
-          }}
-        />
-      </Link>
-
-      <div className="flex-1 flex flex-col min-w-0">
-        <div className="flex justify-between gap-2">
-          <div className="min-w-0">
-            <h3 className="font-medium text-sm sm:text-base truncate">
-              <Link to={detailUrl} className="hover:text-brand-600">
-                {title}
-              </Link>
-            </h3>
-            {(color || size) && (
-              <p className="text-xs text-stone-500 mt-1">
-                {color}{color && size ? ' · ' : ''}{size}
-              </p>
-            )}
-          </div>
-
-          <button
-            onClick={() => onRemove(item.variant_id)}
-            disabled={isUpdating}
-            className="p-1.5 text-stone-400 hover:text-rose-600 transition-colors flex-shrink-0"
-            aria-label="حذف از سبد"
-          >
-            <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="1.5" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
-            </svg>
-          </button>
-        </div>
-
-        <div className="mt-auto flex items-center justify-between pt-3">
-          <div className="flex items-center gap-2 border border-stone-200 rounded-full">
-            <button
-              onClick={() => onQtyChange(item.variant_id, quantity - 1)}
-              disabled={isUpdating}
-              className="w-8 h-8 flex items-center justify-center text-stone-500 hover:text-stone-900 disabled:opacity-50"
-            >
-              −
-            </button>
-            <span className="w-8 text-center text-sm font-medium">
-              {toPersianDigits(quantity)}
-            </span>
-            <button
-              onClick={() => onQtyChange(item.variant_id, quantity + 1)}
-              disabled={isUpdating}
-              className="w-8 h-8 flex items-center justify-center text-stone-500 hover:text-stone-900 disabled:opacity-50"
-            >
-              +
-            </button>
-          </div>
-
-          <span className="font-semibold text-sm">{formatPrice(lineTotal)}</span>
-        </div>
-      </div>
-    </div>
   );
 }
