@@ -3,6 +3,7 @@ import { Link } from 'react-router-dom';
 import { useApp } from '../contexts/AppContext.jsx';
 import { API, toPersianDigits } from '../lib/api.js';
 import ProductCard from '../components/ProductCard.jsx';
+import heroImg from "../../assets/Minimalist Navy and Beige Fashion Editorial.png";
 
 const FILTERS = [
   { key: 'all',        label: 'همه' },
@@ -157,7 +158,7 @@ export default function Home() {
               <div className="absolute -inset-4 bg-gradient-to-br from-brand-200/40 to-transparent rounded-[2rem] blur-2xl pointer-events-none" />
               <div className="relative aspect-[4/5] lg:aspect-[3/4] rounded-2xl lg:rounded-[1.75rem] overflow-hidden shadow-2xl ring-1 ring-stone-900/5">
                 <img
-                  src="../../public/Minimalist Navy and Beige Fashion Editorial.png"
+                  src={heroImg}
                   alt="مدل لباس ویترین - کالکشن جدید"
                   className="w-full h-full object-cover object-center hover:scale-105 transition-transform duration-700"
                   loading="eager"
