@@ -157,7 +157,7 @@ export default function Home() {
               <div className="absolute -inset-4 bg-gradient-to-br from-brand-200/40 to-transparent rounded-[2rem] blur-2xl pointer-events-none" />
               <div className="relative aspect-[4/5] lg:aspect-[3/4] rounded-2xl lg:rounded-[1.75rem] overflow-hidden shadow-2xl ring-1 ring-stone-900/5">
                 <img
-                  src="../../pulic/Minimalist Navy and Beige Fashion Editorial.png"
+                  src="../../public/Minimalist Navy and Beige Fashion Editorial.png"
                   alt="مدل لباس ویترین - کالکشن جدید"
                   className="w-full h-full object-cover object-center hover:scale-105 transition-transform duration-700"
                   loading="eager"
