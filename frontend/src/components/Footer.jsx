@@ -135,7 +135,7 @@ export default function Footer() {
         {/* Bottom bar */}
         <div className="border-t border-stone-800 pt-8 flex flex-col sm:flex-row items-center justify-between gap-4 text-sm text-stone-500">
           <p>© ۱۴۰۵ ویترین. تمامی حقوق محفوظ است.</p>
-          <p className="text-xs">طراحی و توسعه با دقت برای تجربه بهتر خرید</p>
+          <p className="text-xs">طراحی و توسعه توسط محمد رسول زمانی</p>
         </div>
       </div>
     </footer>
