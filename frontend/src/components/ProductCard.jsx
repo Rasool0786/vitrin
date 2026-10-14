@@ -35,13 +35,6 @@ export default function ProductCard({ product }) {
         </Link>
 
         <div className="absolute top-2.5 right-2.5 left-2.5 flex items-start justify-between z-10 pointer-events-none">
-          <div className="flex flex-col gap-1.5">
-            {isNew && (
-              <span className="bg-stone-900 text-white text-[10px] sm:text-xs font-semibold px-2 py-0.5 rounded-md shadow-sm">
-                جدید
-              </span>
-            )}
-          </div>
           {hasDiscount && (
             <span className="bg-rose-600 text-white text-[10px] sm:text-xs font-bold px-2 py-0.5 rounded-md shadow-sm">
               {toPersianDigits(discount)}٪
