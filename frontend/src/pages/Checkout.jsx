@@ -1,9 +1,10 @@
 import { useState, useEffect } from 'react';
-import { Link } from 'react-router-dom';
+import { Link, useNavigate } from 'react-router-dom';
 import { useApp } from '../contexts/AppContext.jsx';
 import { API, formatPrice, toPersianDigits, productImage } from '../lib/api.js';
 
 export default function Checkout() {
+  const navigate = useNavigate();
   const { cart, refreshCart, showToast } = useApp();
 
   const [submitting, setSubmitting] = useState(false);
@@ -17,7 +18,7 @@ export default function Checkout() {
     postal: '',
     shipping: 'normal',
     payment: 'online',
-    note: '', // فیلد جدید برای یادداشت یا نکته سفارش
+    note: '',
   });
   const [errors, setErrors] = useState({});
 
@@ -38,6 +39,11 @@ export default function Checkout() {
   const handleSubmit = async (e) => {
     e.preventDefault();
 
+    if (isEmpty) {
+      showToast('سبد خرید شما خالی است.', 'error');
+      return;
+    }
+
     const required = ['fullname', 'phone', 'city', 'address'];
     const next = {};
     required.forEach((f) => {
@@ -51,18 +57,25 @@ export default function Checkout() {
 
     setSubmitting(true);
     try {
+      // ساخت ساختار آیتم‌ها مطابق انتظار بک‌اند (OrderCreateSerializer)
+      const orderItems = items.map((item) => ({
+        variant_id: item.variant_id,
+        quantity: item.quantity,
+      }));
+
       const order = await API.createOrder({
-        fullname: form.fullname.trim(),
+        items: orderItems,
+        full_name: form.fullname.trim(),
         phone: form.phone.trim(),
         city: form.city.trim(),
         address: form.address.trim(),
-        postal: form.postal.trim(),
-        shipping: form.shipping,
-        payment: form.payment,
-        note: form.note.trim(), // ارسال یادداشت به بک‌اند
+        postal_code: form.postal.trim(),
+        note: form.note.trim(),
       });
+
       setOrderCode(order.code || order.order_code || 'SHK-XXXXXX');
       await refreshCart();
+      showToast('سفارش شما با موفقیت ثبت شد.');
     } catch (err) {
       showToast(err.message || 'خطا در ثبت سفارش.', 'error');
     } finally {
@@ -83,7 +96,7 @@ export default function Checkout() {
           <p className="text-stone-500 mb-2">
             کد پیگیری: <strong>{orderCode}</strong>
           </p>
-          <p className="text-sm text-stone-500 mb-8">سفارش شما با موفقیت ثبت شد.</p>
+          <p className="text-sm text-stone-500 mb-8">سفارش شما با موفقیت ثبت و در انتظار پردازش است.</p>
           <Link
             to="/dashboard"
             className="inline-flex px-6 py-3 bg-stone-900 text-white font-medium rounded-full"
@@ -172,7 +185,7 @@ export default function Checkout() {
                 rows={2}
                 value={form.note}
                 onChange={(e) => update('note', e.target.value)}
-                placeholder="مثلاً زمان تحویل ترجیحی یا توضیحات بسته بندی..."
+                placeholder="مثلاً زمان تحویل ترجیحی..."
                 className="w-full px-4 py-3 text-sm bg-stone-50 border border-stone-200 rounded-xl outline-none focus:border-brand-500 resize-none"
               />
             </div>
