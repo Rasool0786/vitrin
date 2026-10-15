@@ -23,17 +23,11 @@ function getOrderingForFilter(filter) {
 }
 
 export default function Home() {
-  const { showToast } = useApp();
-
   const [categories, setCategories] = useState([]);
   const [products, setProducts]     = useState([]);
-  const [arrivals, setArrivals]     = useState([]);
+  const [discountedProducts, setDiscountedProducts] = useState([]);
   const [currentFilter, setCurrentFilter] = useState('all');
   const [productsLoading, setProductsLoading] = useState(true);
-
-  const [newsletterEmail, setNewsletterEmail] = useState('');
-  const [newsletterError, setNewsletterError] = useState('');
-  const [newsletterSuccess, setNewsletterSuccess] = useState(false);
 
   useEffect(() => {
     API.categories()
@@ -50,36 +44,10 @@ export default function Home() {
   }, [currentFilter]);
 
   useEffect(() => {
-    API.products({ ordering: '-datetime_created' })
-      .then((data) => setArrivals((data.results || data).slice(0, 4)))
-      .catch(() => setArrivals([]));
+    API.products({ is_discounted: true, ordering: '-discount' })
+      .then((data) => setDiscountedProducts((data.results || data).slice(0, 4)))
+      .catch(() => setDiscountedProducts([]));
   }, []);
-
-  const handleNewsletter = async (e) => {
-    e.preventDefault();
-    setNewsletterError('');
-    setNewsletterSuccess(false);
-
-    const email = newsletterEmail.trim();
-    if (!email) {
-      setNewsletterError('لطفاً ایمیل خود را وارد کنید.');
-      return;
-    }
-    if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) {
-      setNewsletterError('ایمیل وارد شده معتبر نیست.');
-      return;
-    }
-
-    try {
-      await API.subscribeNewsletter(email);
-      setNewsletterEmail('');
-      setNewsletterSuccess(true);
-      showToast('عضویت شما با موفقیت ثبت شد.');
-      setTimeout(() => setNewsletterSuccess(false), 5000);
-    } catch (err) {
-      setNewsletterError(err.message || 'خطا در ثبت ایمیل.');
-    }
-  };
 
   const productSkeleton = (
     <div className="animate-pulse">
@@ -175,8 +143,46 @@ export default function Home() {
         </div>
       </section>
 
+      {/* FEATURED PRODUCTS */}
+      <section id="products" className="py-16 lg:py-24 bg-white">
+        <div className="max-w-8xl mx-auto px-4 sm:px-6 lg:px-8">
+          <div className="flex flex-col sm:flex-row sm:items-end sm:justify-between gap-4 mb-8 lg:mb-12">
+            <div>
+              <h2 className="text-2xl sm:text-3xl font-bold text-stone-900">پرفروش‌ترین‌ها</h2>
+              <p className="mt-1 text-stone-500">محبوب‌ترین انتخاب‌های مشتریان</p>
+            </div>
+            <div className="flex flex-wrap gap-2" role="group" aria-label="فیلتر محصولات">
+              {FILTERS.map((f) => (
+                <button
+                  key={f.key}
+                  onClick={() => setCurrentFilter(f.key)}
+                  className={`filter-btn ${currentFilter === f.key ? 'active' : ''} px-4 py-2 text-sm font-medium rounded-full border transition-all`}
+                >
+                  {f.label}
+                </button>
+              ))}
+            </div>
+          </div>
+
+          {!productsLoading && products.length === 0 && (
+            <div className="text-center py-16">
+              <svg className="w-16 h-16 mx-auto text-stone-300 mb-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="1.5" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
+              </svg>
+              <p className="text-lg font-medium text-stone-600">محصولی یافت نشد.</p>
+            </div>
+          )}
+
+          <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4 sm:gap-6">
+            {productsLoading
+              ? Array(8).fill(0).map((_, i) => <div key={i}>{productSkeleton}</div>)
+              : products.map((p) => <ProductCard key={p.id} product={p} />)}
+          </div>
+        </div>
+      </section>
+
       {/* CATEGORIES */}
-      <section id="categories" className="py-16 lg:py-24">
+      <section id="categories" className="py-16 lg:py-24 bg-stone-50">
         <div className="max-w-8xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="text-center mb-10 lg:mb-14">
             <h2 className="text-2xl sm:text-3xl font-bold text-stone-900">دسته‌بندی‌ها</h2>
@@ -220,44 +226,6 @@ export default function Home() {
         </div>
       </section>
 
-      {/* FEATURED PRODUCTS */}
-      <section id="products" className="py-16 lg:py-24 bg-white">
-        <div className="max-w-8xl mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="flex flex-col sm:flex-row sm:items-end sm:justify-between gap-4 mb-8 lg:mb-12">
-            <div>
-              <h2 className="text-2xl sm:text-3xl font-bold text-stone-900">پرفروش‌ترین‌ها</h2>
-              <p className="mt-1 text-stone-500">محبوب‌ترین انتخاب‌های مشتریان</p>
-            </div>
-            <div className="flex flex-wrap gap-2" role="group" aria-label="فیلتر محصولات">
-              {FILTERS.map((f) => (
-                <button
-                  key={f.key}
-                  onClick={() => setCurrentFilter(f.key)}
-                  className={`filter-btn ${currentFilter === f.key ? 'active' : ''} px-4 py-2 text-sm font-medium rounded-full border transition-all`}
-                >
-                  {f.label}
-                </button>
-              ))}
-            </div>
-          </div>
-
-          {!productsLoading && products.length === 0 && (
-            <div className="text-center py-16">
-              <svg className="w-16 h-16 mx-auto text-stone-300 mb-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="1.5" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
-              </svg>
-              <p className="text-lg font-medium text-stone-600">محصولی یافت نشد.</p>
-            </div>
-          )}
-
-          <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4 sm:gap-6">
-            {productsLoading
-              ? Array(8).fill(0).map((_, i) => <div key={i}>{productSkeleton}</div>)
-              : products.map((p) => <ProductCard key={p.id} product={p} />)}
-          </div>
-        </div>
-      </section>
-
       {/* PROMO */}
       <section id="promo" className="py-12 lg:py-16">
         <div className="max-w-8xl mx-auto px-4 sm:px-6 lg:px-8">
@@ -289,15 +257,15 @@ export default function Home() {
         </div>
       </section>
 
-      {/* NEW ARRIVALS */}
-      <section id="new-arrivals" className="py-16 lg:py-24">
+      {/* DISCOUNTED PRODUCTS */}
+      <section id="discounted-products" className="py-16 lg:py-24">
         <div className="max-w-8xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="flex items-end justify-between mb-8 lg:mb-12">
             <div>
-              <h2 className="text-2xl sm:text-3xl font-bold text-stone-900">تازه‌های ویترین</h2>
-              <p className="mt-1 text-stone-500">جدیدترین اضافه‌شده‌ها به فروشگاه</p>
+              <h2 className="text-2xl sm:text-3xl font-bold text-stone-900">تخفیف‌های ویژه</h2>
+              <p className="mt-1 text-stone-500">محصولات استثنایی با قیمت ویژه</p>
             </div>
-            <Link to="/shop?filter=newest" className="hidden sm:inline-flex items-center gap-1 text-sm font-medium text-brand-600 hover:underline">
+            <Link to="/shop?filter=sale" className="hidden sm:inline-flex items-center gap-1 text-sm font-medium text-brand-600 hover:underline">
               مشاهده همه
               <svg className="w-4 h-4 rotate-180" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M9 5l7 7-7 7" />
@@ -305,12 +273,12 @@ export default function Home() {
             </Link>
           </div>
           <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4 sm:gap-6">
-            {arrivals.length === 0
+            {discountedProducts.length === 0
               ? Array(4).fill(0).map((_, i) => <div key={i}>{productSkeleton}</div>)
-              : arrivals.map((p) => <ProductCard key={p.id} product={p} />)}
+              : discountedProducts.map((p) => <ProductCard key={p.id} product={p} />)}
           </div>
           <div className="mt-8 text-center sm:hidden">
-            <Link to="/shop?filter=newest" className="inline-flex items-center gap-1 text-sm font-medium text-brand-600">
+            <Link to="/shop?filter=sale" className="inline-flex items-center gap-1 text-sm font-medium text-brand-600">
               مشاهده همه
               <svg className="w-4 h-4 rotate-180" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M9 5l7 7-7 7" />
