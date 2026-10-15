@@ -1,5 +1,4 @@
 import secrets
-
 from django.db import models
 from django.utils import timezone
 from django.utils.translation import gettext_lazy as _
@@ -36,7 +35,6 @@ class Order(models.Model):
         verbose_name=_("Status"),
     )
 
-    # Amounts (integers — Iranian Toman/Rial)
     subtotal = models.PositiveBigIntegerField(default=0, verbose_name=_("Subtotal"))
     discount_amount = models.PositiveBigIntegerField(
         default=0, verbose_name=_("Discount Amount")
@@ -45,12 +43,10 @@ class Order(models.Model):
         default=0, verbose_name=_("Total Price")
     )
 
-    # Coupon snapshot (Coupon model itself lives in the cart app)
     coupon_code = models.CharField(
         max_length=50, blank=True, verbose_name=_("Coupon Code")
     )
 
-    # Shipping
     full_name = models.CharField(max_length=255, verbose_name=_("Full Name"))
     phone = models.CharField(max_length=20, verbose_name=_("Phone"))
     address = models.TextField(verbose_name=_("Address"))
@@ -60,7 +56,6 @@ class Order(models.Model):
     )
     note = models.TextField(blank=True, verbose_name=_("Note"))
 
-    # Timestamps
     datetime_created = models.DateTimeField(
         auto_now_add=True, verbose_name=_("Date/Time Created")
     )
@@ -116,11 +111,11 @@ class OrderItem(models.Model):
         related_name="order_items",
         verbose_name=_("Variant"),
     )
-    product_title = models.CharField(max_length=255, verbose_name=_("Product Title"))
-    color_name = models.CharField(max_length=50, verbose_name=_("Color Name"))
-    size_name = models.CharField(max_length=50, verbose_name=_("Size Name"))
-    unit_price = models.PositiveBigIntegerField(verbose_name=_("Unit Price"))
-    quantity = models.PositiveIntegerField(verbose_name=_("Quantity"))
+    product_title = models.CharField(max_length=255, blank=True, verbose_name=_("Product Title"))
+    color_name = models.CharField(max_length=50, blank=True, verbose_name=_("Color Name"))
+    size_name = models.CharField(max_length=50, blank=True, verbose_name=_("Size Name"))
+    unit_price = models.PositiveBigIntegerField(default=0, verbose_name=_("Unit Price"))
+    quantity = models.PositiveIntegerField(default=1, verbose_name=_("Quantity"))
     line_total = models.PositiveBigIntegerField(default=0, verbose_name=_("Line Total"))
 
     datetime_created = models.DateTimeField(
@@ -141,5 +136,15 @@ class OrderItem(models.Model):
         return f"{self.product_title} x {self.quantity}"
 
     def save(self, *args, **kwargs):
+        if self.variant:
+            if not self.product_title:
+                self.product_title = self.variant.product.title
+            if not self.color_name and self.variant.color:
+                self.color_name = self.variant.color.name
+            if not self.size_name and self.variant.size:
+                self.size_name = self.variant.size.name
+            if not self.unit_price:
+                self.unit_price = int(self.variant.product.final_price)
+
         self.line_total = self.unit_price * self.quantity
         super().save(*args, **kwargs)
