@@ -6,7 +6,6 @@ from rest_framework.decorators import action
 from rest_framework.permissions import AllowAny, IsAuthenticated
 from rest_framework.response import Response
 
-
 from . import models, serializers
 from .filters import ProductFilter
 from .pagination import ProductPagination, CommentPagination
@@ -59,7 +58,7 @@ class ProductViewSet(viewsets.ModelViewSet):
     filterset_class = ProductFilter
     ordering_fields = ["price", "datetime_created", "average_rating"]
     ordering = ["-datetime_created"]
-    search_fields = ["title", "description", "category"]
+    search_fields = ["title", "description", "category__name"]
 
     def get_queryset(self):
         base = models.Product.objects.select_related("category").annotate(
@@ -83,6 +82,21 @@ class ProductViewSet(viewsets.ModelViewSet):
             "variants__size",
             "comments",
         )
+
+    def filter_queryset(self, queryset):
+        search_query = self.request.query_params.get('search', '').strip()
+        if search_query:
+            search_query = search_query.replace('ي', 'ی').replace('ك', 'ک')
+            queryset = queryset.filter(
+                Q(title__icontains=search_query) | 
+                Q(description__icontains=search_query) |
+                Q(category__name__icontains=search_query)
+            )
+        
+        for backend in list(self.filter_backends):
+            if backend != filters.SearchFilter:
+                queryset = backend().filter_queryset(self.request, queryset, self)
+        return queryset
 
     def get_serializer_class(self):
         if self.action == "list":
@@ -202,17 +216,6 @@ class CommentViewSet(viewsets.ModelViewSet):
         comment.is_published = False
         comment.save(update_fields=["is_published", "datetime_updated"])
         return Response({"detail": _("Comment rejected.")})
-
-
-"""
-Endpoints:
-    GET    /api/wishlist/               → list (guest + user)
-    POST   /api/wishlist/               → add
-    DELETE /api/wishlist/<product_id>/  → remove
-    POST   /api/wishlist/toggle/        → toggle
-    GET    /api/wishlist/ids/           → lightweight: just product_ids
-    POST   /api/wishlist/merge/         → merge guest → user (auth)
-"""
 
 
 class WishlistViewSet(viewsets.ViewSet):
