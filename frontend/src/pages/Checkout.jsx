@@ -1,7 +1,7 @@
 import { useState, useEffect } from 'react';
 import { Link } from 'react-router-dom';
 import { useApp } from '../contexts/AppContext.jsx';
-import { API, formatPrice, toPersianDigits } from '../lib/api.js';
+import { API, formatPrice, toPersianDigits, productImage } from '../lib/api.js';
 
 export default function Checkout() {
   const { cart, refreshCart, showToast } = useApp();
@@ -17,6 +17,7 @@ export default function Checkout() {
     postal: '',
     shipping: 'normal',
     payment: 'online',
+    note: '', // فیلد جدید برای یادداشت یا نکته سفارش
   });
   const [errors, setErrors] = useState({});
 
@@ -24,9 +25,9 @@ export default function Checkout() {
     refreshCart();
   }, [refreshCart]);
 
-  const items = cart.items || [];
+  const items = cart?.items || [];
   const isEmpty = items.length === 0;
-  const total = cart.total ?? 0;
+  const total = cart?.total ?? 0;
   const shippingLabel = total >= 2000000 ? 'رایگان' : 'محاسبه بعد از ثبت';
 
   const update = (field, value) => {
@@ -58,6 +59,7 @@ export default function Checkout() {
         postal: form.postal.trim(),
         shipping: form.shipping,
         payment: form.payment,
+        note: form.note.trim(), // ارسال یادداشت به بک‌اند
       });
       setOrderCode(order.code || order.order_code || 'SHK-XXXXXX');
       await refreshCart();
@@ -81,7 +83,7 @@ export default function Checkout() {
           <p className="text-stone-500 mb-2">
             کد پیگیری: <strong>{orderCode}</strong>
           </p>
-          <p className="text-sm text-stone-500 mb-8">در نسخه دمو پرداخت واقعی انجام نمی‌شود.</p>
+          <p className="text-sm text-stone-500 mb-8">سفارش شما با موفقیت ثبت شد.</p>
           <Link
             to="/dashboard"
             className="inline-flex px-6 py-3 bg-stone-900 text-white font-medium rounded-full"
@@ -164,6 +166,16 @@ export default function Checkout() {
                 className="w-full px-4 py-3 text-sm bg-stone-50 border border-stone-200 rounded-xl outline-none focus:border-brand-500"
               />
             </div>
+            <div>
+              <label className="block text-sm font-medium mb-1">توضیحات یا نکته سفارش (اختیاری)</label>
+              <textarea
+                rows={2}
+                value={form.note}
+                onChange={(e) => update('note', e.target.value)}
+                placeholder="مثلاً زمان تحویل ترجیحی یا توضیحات بسته بندی..."
+                className="w-full px-4 py-3 text-sm bg-stone-50 border border-stone-200 rounded-xl outline-none focus:border-brand-500 resize-none"
+              />
+            </div>
           </div>
 
           <div className="bg-white rounded-2xl border border-stone-200 p-6 space-y-3">
@@ -238,15 +250,15 @@ export default function Checkout() {
             <h2 className="font-semibold text-lg mb-4">خلاصه سفارش</h2>
             <div className="space-y-3 mb-4 max-h-64 overflow-y-auto">
               {items.map((item) => {
-                const p = item.product || {};
-                const img = p.main_image || p.image;
+                const img = item.image || item.product_image || (item.product ? productImage(item.product) : null);
                 return (
-                  <div key={item.variant_id} className="flex gap-3 text-sm">
-                    <img src={img} alt="" className="w-14 h-16 object-cover rounded-lg" />
+                  <div key={item.variant_id} className="flex gap-3 text-sm items-center">
+                    {img && <img src={img} alt="" className="w-14 h-16 object-cover rounded-lg bg-stone-100 flex-shrink-0" />}
                     <div className="flex-1 min-w-0">
-                      <p className="font-medium truncate">{p.title}</p>
-                      <p className="text-stone-500">
-                        {toPersianDigits(item.quantity)} × {formatPrice(p.final_price || p.price || 0)}
+                      <p className="font-medium truncate">{item.product_title || item.product?.title}</p>
+                      <p className="text-xs text-stone-500 mt-0.5">{item.color} · {item.size}</p>
+                      <p className="text-stone-500 text-xs mt-1">
+                        {toPersianDigits(item.quantity)} × {formatPrice(item.final_price || item.price || 0)}
                       </p>
                     </div>
                   </div>
