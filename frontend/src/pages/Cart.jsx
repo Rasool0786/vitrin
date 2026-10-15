@@ -55,6 +55,20 @@ export default function Cart() {
     }
   };
 
+  const getItemImage = (item) => {
+    if (item.image) return item.image;
+    if (item.product_image) return item.product_image;
+    if (item.product) {
+      if (typeof item.product === 'object') {
+        return productImage(item.product);
+      }
+    }
+    if (item.variant && item.variant.product) {
+      return productImage(item.variant.product);
+    }
+    return null;
+  };
+
   if (loading) {
     return (
       <main className="min-h-[70vh] flex items-center justify-center">
@@ -86,7 +100,7 @@ export default function Cart() {
           <div className="grid lg:grid-cols-3 gap-8">
             <div className="lg:col-span-2 space-y-4">
               {items.map((item) => {
-                const imgUrl = item.image || item.product_image || (item.product ? productImage(item.product) : null);
+                const imgUrl = getItemImage(item);
                 return (
                   <div
                     key={item.variant_id}

@@ -24,6 +24,7 @@ class CartItemReadSerializer(serializers.ModelSerializer):
     final_price = serializers.IntegerField(source="product.final_price", read_only=True)
     color = serializers.CharField(source="color.name", read_only=True)
     size = serializers.CharField(source="size.name", read_only=True)
+    image = serializers.SerializerMethodField(read_only=True)
 
     class Meta:
         model = ProductVariant
@@ -35,7 +36,18 @@ class CartItemReadSerializer(serializers.ModelSerializer):
             "size",
             "stock",
             "final_price",
+            "image",
         ]
+
+    def get_image(self, obj):
+        request = self.context.get("request")
+        # پیدا کردن اولین عکس محصول مرتبط با این واریانت
+        first_img = obj.product.images.first()
+        if first_img and first_img.image:
+            if request:
+                return request.build_absolute_uri(first_img.image.url)
+            return first_img.image.url
+        return None
 
 
 class CouponReadSerializer(serializers.ModelSerializer):
