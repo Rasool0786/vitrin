@@ -37,6 +37,7 @@ class ProductAdmin(admin.ModelAdmin):
     search_fields = ["title", "product_code", "slug"]
     inlines = [ProductImageInline, ProductVariantInline]
     readonly_fields = ["datetime_created", "datetime_updated"]
+    list_editable = ["price", "discount"]
 
 
 @admin.register(Category)
@@ -62,6 +63,7 @@ class CommentAdmin(admin.ModelAdmin):
     list_display = [
         "name",
         "product",
+        "short_text",
         "stars",
         "is_published",
         "datetime_created",
@@ -72,6 +74,15 @@ class CommentAdmin(admin.ModelAdmin):
     readonly_fields = ["datetime_created", "datetime_updated"]
     actions = ["approve_comments", "reject_comments"]
 
+    @admin.display(description=_("Text Summary"))
+    def short_text(self, obj):
+        if not obj.text:
+            return ""
+        words = obj.text.split()
+        if len(words) > 20:
+            return " ".join(words[:20]) + "..."
+        return obj.text
+
     @admin.action(description=_("Approve selected comments"))
     def approve_comments(self, request, queryset):
         updated = queryset.update(is_published=True)
@@ -81,7 +92,6 @@ class CommentAdmin(admin.ModelAdmin):
     def reject_comments(self, request, queryset):
         updated = queryset.update(is_published=False)
         self.message_user(request, f"{updated} comment(s) rejected.")
-
 
 @admin.register(Wishlist)
 class WishlistAdmin(admin.ModelAdmin):
