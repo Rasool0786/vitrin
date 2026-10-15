@@ -1,5 +1,6 @@
 import { Routes, Route } from 'react-router-dom';
 import Layout from './components/Layout.jsx';
+import ScrollToTop from './components/ScrollToTop';
 
 import Home          from './pages/Home.jsx';
 import Shop          from './pages/Shop.jsx';
@@ -29,6 +30,7 @@ import ServerError from './pages/ServerError.jsx';
 export default function App() {
   return (
     <Routes>
+      <ScrollToTop />
       {/* صفحاتی که هدر/فوتر مشترک دارن */}
       <Route element={<Layout />}>
         <Route path="/"                 element={<Home />} />
