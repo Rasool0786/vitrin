@@ -1,9 +1,10 @@
 from rest_framework import serializers
-
 from .models import Order, OrderItem
 
 
 class OrderItemSerializer(serializers.ModelSerializer):
+    image = serializers.SerializerMethodField(read_only=True)
+
     class Meta:
         model = OrderItem
         fields = [
@@ -15,8 +16,19 @@ class OrderItemSerializer(serializers.ModelSerializer):
             "unit_price",
             "quantity",
             "line_total",
+            "image",
         ]
         read_only_fields = fields
+
+    def get_image(self, obj):
+        request = self.context.get("request")
+        if obj.variant and obj.variant.product:
+            first_img = obj.variant.product.images.first()
+            if first_img and first_img.image:
+                if request:
+                    return request.build_absolute_uri(first_img.image.url)
+                return first_img.image.url
+        return None
 
 
 class OrderListSerializer(serializers.ModelSerializer):
