@@ -182,6 +182,7 @@ export default function Home() {
       </section>
 
       {/* CATEGORIES */}
+<<<<<<< Updated upstream
       <section id="categories" className="py-16 lg:py-24 bg-stone-50">
         <div className="max-w-8xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="text-center mb-10 lg:mb-14">
@@ -192,17 +193,34 @@ export default function Home() {
             {categories.length === 0
               ? Array(6).fill(0).map((_, i) => (
                   <div key={i} className="animate-pulse aspect-[3/4] rounded-2xl bg-stone-200" />
+=======
+      <section id="categories" className="py-16 lg:py-2>
+        <div className="max-w-8xl mx-auto px-4 sm:px-6 >          <div className="text-center mb-10 lg:mb-14">
+            <h2 className="text-2xl sm:text-3xl font-bo>
+            <p className="mt-2 text-stone-500">آنچه برا>
+          </div>
+          <div className="grid grid-cols-2 md:grid-cols>
+            {categories.length === 0
+              ? Array(6).fill(0).map((_, i) => (
+                  <div key={i} className="animate-pulse>
+>>>>>>> Stashed changes
                 ))
               : categories.map((cat) => (
                   <Link
                     key={cat.slug}
+<<<<<<< Updated upstream
                     to={`/shop?cat=${encodeURIComponent(cat.slug)}`}
                     className="category-card group relative aspect-[3/4] rounded-2xl overflow-hidden bg-stone-200"
+=======
+                    to={`/shop?cat=${encodeURIComponent>
+                    className="category-card group rela>
+>>>>>>> Stashed changes
                   >
                     {cat.image_url ? (
                       <img
                         src={cat.image_url}
                         alt={cat.name}
+<<<<<<< Updated upstream
                         className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-500"
                         loading="lazy"
                       />
@@ -218,6 +236,23 @@ export default function Home() {
                       <h3 className="font-semibold text-sm sm:text-base">{cat.name}</h3>
                       <p className="text-xs opacity-80 mt-0.5">
                         {toPersianDigits(cat.product_count || 0)} محصول
+=======
+                        className="w-full h-full object>
+                        loading="lazy"
+                      />
+                    ) : (
+                      <div className="w-full h-full fle>
+                        <svg className="w-16 h-16" fill>
+                          <path strokeLinecap="round" s>
+                        </svg>
+                      </div>
+                    )}
+                    <div className="absolute inset-0 bg>
+                    <div className="absolute bottom-0 i>
+                      <h3 className="font-semibold text>
+                      <p className="text-xs opacity-80 >
+                        {toPersianDigits(cat.product_co>
+>>>>>>> Stashed changes
                       </p>
                     </div>
                   </Link>

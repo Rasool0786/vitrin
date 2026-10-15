@@ -49,10 +49,6 @@ class Category(models.Model):
         super().save(*args, **kwargs)
 
     @property
-    def product_count(self):
-        return self.products.count()
-
-    @property
     def image_url(self):
         if self.image:
             return self.image.url
