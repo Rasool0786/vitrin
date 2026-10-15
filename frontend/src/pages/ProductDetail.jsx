@@ -1,4 +1,4 @@
-import { useState, useEffect, useRef } from 'react';
+import { useState, useEffect } from 'react';
 import { useParams, Link } from 'react-router-dom';
 import { useApp } from '../contexts/AppContext.jsx';
 import { API, formatPrice, toPersianDigits, productImage, discountPercent } from '../lib/api.js';
@@ -25,6 +25,8 @@ export default function ProductDetail() {
   const [selectedColorId, setSelectedColorId]     = useState(null);
   const [activeTab, setActiveTab] = useState('specs');
 
+  const [activeImage, setActiveImage] = useState('');
+
   const [reviewName, setReviewName]   = useState('');
   const [reviewRating, setReviewRating] = useState(5);
   const [reviewText, setReviewText]   = useState('');
@@ -37,11 +39,12 @@ export default function ProductDetail() {
     setQty(1);
     setSelectedVariantId(null);
     setSelectedColorId(null);
+    setActiveImage('');
 
     API.product(slug)
       .then((p) => {
         setProduct(p);
-        // اولین رنگ موجود را انتخاب کن
+        setActiveImage(productImage(p));
         const firstAvailable = p.variants?.find((v) => v.stock > 0);
         if (firstAvailable) {
           setSelectedColorId(firstAvailable.color.id);
@@ -51,7 +54,6 @@ export default function ProductDetail() {
       .finally(() => setLoading(false));
   }, [slug]);
 
-  // محصولات مرتبط
   useEffect(() => {
     if (!product) return;
     API.products({ category: product.category?.slug, page_size: 5 })
@@ -64,7 +66,6 @@ export default function ProductDetail() {
       .catch(() => setRelated([]));
   }, [product]);
 
-  // نظرات
   useEffect(() => {
     if (!product) return;
     API.productComments(product.slug)
@@ -77,7 +78,6 @@ export default function ProductDetail() {
   const variants = product?.variants || [];
   const inStock = variants.filter((v) => v.stock > 0);
 
-  // رنگ‌های موجود
   const colors = [];
   const seenColors = new Set();
   inStock.forEach((v) => {
@@ -87,7 +87,6 @@ export default function ProductDetail() {
     }
   });
 
-  // سایزهای مربوط به رنگ انتخاب‌شده
   const sizesForColor = inStock.filter((v) => v.color.id === selectedColorId);
 
   const handleAddToCart = async () => {
@@ -99,7 +98,6 @@ export default function ProductDetail() {
     if (ok) setQty(1);
   };
 
-  // ثبت نظر - کاملاً مطابق بک‌اند (stars + text)
   const handleSubmitReview = async (e) => {
     e.preventDefault();
     if (!reviewText.trim()) {
@@ -110,11 +108,10 @@ export default function ProductDetail() {
     try {
       const response = await API.createComment(product.slug, {
         name: reviewName.trim() || 'کاربر',
-        stars: reviewRating,   // ← stars
-        text: reviewText.trim(), // ← text
+        stars: reviewRating,
+        text: reviewText.trim(),
       });
       
-      // بک‌اند معمولاً comment را داخل response می‌فرستد
       const newComment = response.comment || response;
       setReviews((prev) => [newComment, ...prev]);
       
@@ -150,12 +147,13 @@ export default function ProductDetail() {
 
   const discount = discountPercent(product);
   const hasDiscount = discount > 0;
-  const mainImg = productImage(product);
+
+  const totalComments = product.comments_count || reviews.length;
+  const avgRating = totalComments > 0 ? (product.average_rating || 0) : 0;
 
   return (
     <main className="min-h-[70vh]">
       <div className="max-w-8xl mx-auto px-4 sm:px-6 lg:px-8 py-8 lg:py-12">
-        {/* Breadcrumb */}
         <nav className="text-sm text-stone-500 mb-6" aria-label="مسیر">
           <Link to="/" className="hover:text-stone-800">صفحه اصلی</Link>
           <span className="mx-2">/</span>
@@ -169,9 +167,9 @@ export default function ProductDetail() {
           <div className="space-y-3 lg:sticky lg:top-28 lg:self-start">
             <div className="relative aspect-[3/4] rounded-2xl lg:rounded-3xl overflow-hidden bg-stone-100 ring-1 ring-stone-200/60 shadow-lg">
               <img
-                src={mainImg}
+                src={activeImage || productImage(product)}
                 alt={product.title}
-                className="w-full h-full object-cover"
+                className="w-full h-full object-cover transition-all duration-300"
               />
               {hasDiscount && (
                 <span className="absolute top-4 left-4 bg-rose-600 text-white text-xs font-bold px-2.5 py-1 rounded-lg">
@@ -180,22 +178,27 @@ export default function ProductDetail() {
               )}
             </div>
 
-            {/* تصاویر اضافی */}
             {product.images && product.images.length > 0 && (
               <div className="grid grid-cols-4 gap-2">
-                {product.images.slice(0, 4).map((img, i) => (
-                  <button
-                    key={img.id || i}
-                    type="button"
-                    className="aspect-square rounded-xl overflow-hidden border-2 border-transparent hover:border-stone-900 bg-stone-100"
-                  >
-                    <img
-                      src={img.image}
-                      alt=""
-                      className="w-full h-full object-cover"
-                    />
-                  </button>
-                ))}
+                {product.images.slice(0, 4).map((img, i) => {
+                  const isSelected = activeImage === img.image;
+                  return (
+                    <button
+                      key={img.id || i}
+                      type="button"
+                      onClick={() => setActiveImage(img.image)}
+                      className={`aspect-square rounded-xl overflow-hidden border-2 bg-stone-100 transition-all ${
+                        isSelected ? 'border-stone-900 ring-2 ring-stone-900/20' : 'border-transparent hover:border-stone-400'
+                      }`}
+                    >
+                      <img
+                        src={img.image}
+                        alt=""
+                        className="w-full h-full object-cover"
+                      />
+                    </button>
+                  );
+                })}
               </div>
             )}
           </div>
@@ -211,11 +214,19 @@ export default function ProductDetail() {
 
             <div className="flex items-center gap-2 mb-5 text-sm">
               <span className="text-amber-500 tracking-tight">
-                {'★'.repeat(Math.round(product.average_rating || 4))}
-                {'☆'.repeat(5 - Math.round(product.average_rating || 4))}
+                {totalComments > 0 ? (
+                  <>
+                    {'★'.repeat(Math.round(avgRating))}
+                    {'☆'.repeat(5 - Math.round(avgRating))}
+                  </>
+                ) : (
+                  '☆☆☆☆☆'
+                )}
               </span>
               <span className="text-stone-500">
-                {toPersianDigits((product.average_rating || 4.5).toFixed(1))} · {toPersianDigits(product.comments_count || reviews.length)} نظر
+                {totalComments > 0 
+                  ? `${toPersianDigits(avgRating.toFixed(1))} · ${toPersianDigits(totalComments)} نظر`
+                  : 'هنوز نظری ثبت نشده'}
               </span>
             </div>
 
@@ -387,9 +398,9 @@ export default function ProductDetail() {
           )}
 
           {activeTab === 'reviews' && (
-            <div className="space-y-8">
-              {/* فرم ثبت نظر */}
-              <form onSubmit={handleSubmitReview} className="bg-stone-50 rounded-2xl p-6 space-y-4">
+            <div className="space-y-10">
+              {/* فرم ثبت نظر (آورده شده به بالای لیست نظرات برای دسترسی بهتر UX) */}
+              <form onSubmit={handleSubmitReview} className="bg-stone-50 rounded-2xl p-6 space-y-4 border border-stone-200/60">
                 <h3 className="font-semibold text-lg">نظر خود را بنویسید</h3>
                 
                 <div>
@@ -443,7 +454,7 @@ export default function ProductDetail() {
               {/* لیست نظرات */}
               <div className="space-y-4">
                 {reviews.length === 0 ? (
-                  <p className="text-stone-500 text-center py-8">هنوز نظری ثبت نشده است.</p>
+                  <p className="text-stone-500 text-center py-8">هنوز نظری ثبت نشده است. اولین نفری باشید که نظر می‌دهد!</p>
                 ) : (
                   reviews.map((review) => (
                     <div key={review.id} className="bg-white border border-stone-200 rounded-2xl p-5">
@@ -465,7 +476,6 @@ export default function ProductDetail() {
           )}
         </div>
 
-        {/* محصولات مرتبط */}
         {related.length > 0 && (
           <div className="mt-20">
             <h2 className="text-xl font-bold mb-6">محصولات مرتبط</h2>
