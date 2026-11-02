@@ -1,0 +1,77 @@
+# -----------------------------------------------------------------------------
+# Black - Code Formatter
+# -----------------------------------------------------------------------------
+[tool.black]
+line-length = 88
+target-version = ["py313"]
+include = '\.pyi?$'
+extend-exclude = '''
+/(
+    \.git
+  | \.hg
+  | \.mypy_cache
+  | \.tox
+  | \.venv
+  | _build
+  | buck-out
+  | build
+  | dist
+  | migrations
+)/
+'''
+
+# -----------------------------------------------------------------------------
+# isort - Import Sorting (compatible with Black)
+# -----------------------------------------------------------------------------
+[tool.isort]
+profile = "black"
+line_length = 88
+skip_glob = ["*/migrations/*"]
+known_first_party = ["users", "products", "cart", "orders", "config"]
+known_django = ["django"]
+sections = ["FUTURE", "STDLIB", "DJANGO", "THIRDPARTY", "FIRSTPARTY", "LOCALFOLDER"]
+default_section = "THIRDPARTY"
+
+# -----------------------------------------------------------------------------
+# pytest - Test Runner
+# -----------------------------------------------------------------------------
+[tool.pytest.ini_options]
+DJANGO_SETTINGS_MODULE = "config.settings.development"
+python_files = ["test_*.py"]
+python_classes = ["Test*"]
+python_functions = ["test_*"]
+addopts = [
+    "-ra",
+    "-q",
+    "--strict-markers",
+    "--tb=short",
+]
+testpaths = ["users", "products", "cart", "orders"]
+markers = [
+    "slow: marks tests as slow",
+    "integration: marks tests as integration",
+    "smoke: marks smoke tests",
+]
+
+# -----------------------------------------------------------------------------
+# Coverage
+# -----------------------------------------------------------------------------
+[tool.coverage.run]
+source = ["users", "products", "cart", "orders"]
+omit = [
+    "*/migrations/*",
+    "*/tests/*",
+    "*/__init__.py",
+    "manage.py",
+    "config/*",
+]
+
+[tool.coverage.report]
+exclude_lines = [
+    "pragma: no cover",
+    "def __repr__",
+    "if self.debug:",
+    "raise NotImplementedError",
+    "if __name__ == .__main__.:",
+    "if TYPE_CHECKING:",
+]

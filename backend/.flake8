@@ -1,0 +1,29 @@
+[flake8]
+max-line-length = 88
+extend-ignore =
+    # Black handles line breaks; flake8 should not fight it
+    E203,
+    # Black sometimes leaves this
+    W503,
+    # Allow long URLs in comments
+    E501,
+    # Allow f-strings without placeholders
+    F541,
+exclude =
+    .git,
+    __pycache__,
+    */migrations/*,
+    .venv,
+    venv,
+    build,
+    dist,
+    staticfiles,
+    media,
+per-file-ignores =
+    # __init__.py files often have unused imports
+    __init__.py:F401,
+    # Settings files may import * in dev/prod
+    config/settings/*.py:F403,F405,
+    # Tests may use fixtures in ways flake8 cannot see
+    */tests/*:F811,
+    conftest.py:F811,

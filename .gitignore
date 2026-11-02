@@ -1,166 +1,72 @@
-# ============================================
-# Python / Django
-# ============================================
+# -----------------------------------------------------------------------------
+# Python
+# -----------------------------------------------------------------------------
 __pycache__/
 *.py[cod]
 *$py.class
 *.so
 .Python
 build/
-develop-eggs/
 dist/
-downloads/
-eggs/
-.eggs/
-lib64/
-parts/
-sdist/
-var/
-wheels/
-share/python-wheels/
 *.egg-info/
-.installed.cfg
-*.egg
-MANIFEST
-media/
+.eggs/
 
+# -----------------------------------------------------------------------------
 # Virtual environments
+# -----------------------------------------------------------------------------
 .venv/
 venv/
-ENV/
 env/
-.python-version
-pip-log.txt
-pip-delete-this-directory.txt
 
+# -----------------------------------------------------------------------------
 # Django
+# -----------------------------------------------------------------------------
 *.log
-local_settings.py
 db.sqlite3
-db.sqlite3-journal
-/media/
-!/backend/media/.gitkeep
+staticfiles/
+media/
+logs/
 
-# Django staticfiles (collected)
-/backend/staticfiles/
-/backend/static/
-
-# ============================================
-# Environment variables / Secrets
-# ============================================
+# -----------------------------------------------------------------------------
+# Environment
+# -----------------------------------------------------------------------------
 .env
 .env.*
 !.env.example
-*.env
-*.pem
-*.key
 
-# ============================================
-# Node / React / Vite
-# ============================================
-node_modules/
-npm-debug.log*
-yarn-debug.log*
-yarn-error.log*
-pnpm-debug.log*
-lerna-debug.log*
-
-# Vite build output
-frontend/dist/
-frontend/dist-ssr/
-frontend/.vite/
-*.local
-
-# Package manager locks (اگه می‌خوای یکی رو نگه داری، بقیه رو uncomment کن)
-# yarn.lock
-# pnpm-lock.yaml
-
-# ============================================
+# -----------------------------------------------------------------------------
 # Testing / Coverage
-# ============================================
+# -----------------------------------------------------------------------------
+.pytest_cache/
 .coverage
 .coverage.*
-.cache
-.pytest_cache/
-.tox/
-.nox/
 htmlcov/
-*.cover
-.hypothesis/
 coverage.xml
-*.coveragerc
+.tox/
 
-# ============================================
-# Type checkers / Linters
-# ============================================
+# -----------------------------------------------------------------------------
+# Tooling caches
+# -----------------------------------------------------------------------------
 .mypy_cache/
-.dmypy.json
-dmypy.json
 .ruff_cache/
-.eslintcache
-.stylelintcache
+.pre-commit-cache/
 
-# ============================================
-# IDEs / Editors
-# ============================================
-.vscode/
-!.vscode/extensions.json
-!.vscode/settings.json.example
+# -----------------------------------------------------------------------------
+# IDEs
+# -----------------------------------------------------------------------------
 .idea/
+.vscode/
 *.swp
 *.swo
-*~
-*.sublime-project
-*.sublime-workspace
-.project
-.classpath
-.settings/
 
-# ============================================
-# OS files
-# ============================================
+# -----------------------------------------------------------------------------
+# OS
+# -----------------------------------------------------------------------------
 .DS_Store
-.DS_Store?
-._*
-.Spotlight-V100
-.Trashes
-ehthumbs.db
 Thumbs.db
-desktop.ini
 
-# ============================================
-# Docker
-# ============================================
-# اگه override شخصی داری
-docker-compose.override.yml
-.dockerignore
-
-# ============================================
-# Logs / Temp
-# ============================================
-*.log
-logs/
-tmp/
-temp/
-*.tmp
-*.bak
-*.orig
-
-# ============================================
-# Backups / DB dumps
-# ============================================
-*.sql
-*.sqlite
-*.sqlite3
-*.dump
-backup/
-backups/
-
-# ============================================
-# Misc
-# ============================================
-.cache/
-.sass-cache/
-*.pid
-*.seed
-*.pid.lock
+# -----------------------------------------------------------------------------
+# Frontend
+# -----------------------------------------------------------------------------
+node_modules/
+frontend/dist/
