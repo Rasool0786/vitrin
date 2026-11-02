@@ -3,6 +3,7 @@ from django.core.validators import MinValueValidator, MaxValueValidator
 from django.urls import reverse
 from django.utils.translation import gettext_lazy as _
 from django.utils.text import slugify
+from django.conf import settings
 
 
 def product_image_upload_path(instance, filename):
@@ -266,7 +267,7 @@ class ProductVariant(models.Model):
 
 class Wishlist(models.Model):
     user = models.ForeignKey(
-        "users.CustomUser",
+        settings.AUTH_USER_MODEL,
         on_delete=models.CASCADE,
         related_name="wishlist_items",
         verbose_name=_("User"),

@@ -11,7 +11,7 @@ concurrency:
 
 permissions:
   contents: read
-  packages: write   # required for GHCR push
+  packages: write # required for GHCR push
 
 jobs:
   # ===========================================================================
@@ -67,7 +67,7 @@ jobs:
     if: github.ref == 'refs/heads/main'
     environment:
       name: production
-      url: https://vitrin.ir
+      url: https://vitrinsbz.ir
     steps:
       - name: Deploy via SSH
         uses: appleboy/ssh-action@v1

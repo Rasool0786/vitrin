@@ -85,7 +85,7 @@ DATABASES["default"]["CONN_MAX_AGE"] = env("CONN_MAX_AGE")
 # -----------------------------------------------------------------------------
 # Auth
 # -----------------------------------------------------------------------------
-AUTH_USER_MODEL = "users.User"
+AUTH_USER_MODEL = "users.CustomUser"
 
 AUTH_PASSWORD_VALIDATORS = [
     {"NAME": "django.contrib.auth.password_validation.UserAttributeSimilarityValidator"},

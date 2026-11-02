@@ -34,7 +34,7 @@ EMAIL_PORT = env.int("EMAIL_PORT", default=587)
 EMAIL_USE_TLS = env.bool("EMAIL_USE_TLS", default=True)
 EMAIL_HOST_USER = env("EMAIL_HOST_USER")
 EMAIL_HOST_PASSWORD = env("EMAIL_HOST_PASSWORD")
-DEFAULT_FROM_EMAIL = env("DEFAULT_FROM_EMAIL", default="noreply@vitrin.ir")
+DEFAULT_FROM_EMAIL = env("DEFAULT_FROM_EMAIL", default="noreply@vitrinsbz.ir")
 
 # -----------------------------------------------------------------------------
 # Logging → فایل چرخشی + کنسول
@@ -45,7 +45,7 @@ LOG_DIR.mkdir(exist_ok=True)
 LOGGING["handlers"]["file"] = {
     "class": "logging.handlers.RotatingFileHandler",
     "filename": LOG_DIR / "django.log",
-    "maxBytes": 10 * 1024 * 1024,   # 10MB
+    "maxBytes": 10 * 1024 * 1024,  # 10MB
     "backupCount": 5,
     "formatter": "verbose",
 }

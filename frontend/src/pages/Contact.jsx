@@ -1,21 +1,25 @@
-import { useState } from 'react';
-import { Link } from 'react-router-dom';
-import { useApp } from '../contexts/AppContext.jsx';
-import { API } from '../lib/api.js';
+import { useState } from "react";
+import { Link } from "react-router-dom";
+import { useApp } from "../contexts/AppContext.jsx";
+import { API } from "../lib/api.js";
 
 const SUBJECTS = [
-  { value: '',        label: 'انتخاب کنید' },
-  { value: 'order',   label: 'پیگیری سفارش' },
-  { value: 'return',  label: 'بازگشت کالا' },
-  { value: 'product', label: 'سوال درباره محصول' },
-  { value: 'other',   label: 'سایر' },
+  { value: "", label: "انتخاب کنید" },
+  { value: "order", label: "پیگیری سفارش" },
+  { value: "return", label: "بازگشت کالا" },
+  { value: "product", label: "سوال درباره محصول" },
+  { value: "other", label: "سایر" },
 ];
 
 export default function Contact() {
   const { showToast } = useApp();
 
   const [form, setForm] = useState({
-    name: '', phone: '', email: '', subject: '', message: '',
+    name: "",
+    phone: "",
+    email: "",
+    subject: "",
+    message: "",
   });
   const [errors, setErrors] = useState({});
   const [success, setSuccess] = useState(false);
@@ -23,17 +27,18 @@ export default function Contact() {
 
   const update = (field, value) => {
     setForm((f) => ({ ...f, [field]: value }));
-    if (errors[field]) setErrors((e) => ({ ...e, [field]: '' }));
+    if (errors[field]) setErrors((e) => ({ ...e, [field]: "" }));
   };
 
   const handleSubmit = async (e) => {
     e.preventDefault();
     const next = {};
-    if (!form.name.trim()) next.name = 'این فیلد الزامی است.';
-    if (!form.email.trim()) next.email = 'این فیلد الزامی است.';
-    else if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(form.email)) next.email = 'ایمیل معتبر نیست.';
-    if (!form.subject) next.subject = 'این فیلد الزامی است.';
-    if (!form.message.trim()) next.message = 'این فیلد الزامی است.';
+    if (!form.name.trim()) next.name = "این فیلد الزامی است.";
+    if (!form.email.trim()) next.email = "این فیلد الزامی است.";
+    else if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(form.email))
+      next.email = "ایمیل معتبر نیست.";
+    if (!form.subject) next.subject = "این فیلد الزامی است.";
+    if (!form.message.trim()) next.message = "این فیلد الزامی است.";
 
     setErrors(next);
     if (Object.keys(next).length) return;
@@ -47,12 +52,12 @@ export default function Contact() {
         subject: form.subject,
         message: form.message.trim(),
       });
-      setForm({ name: '', phone: '', email: '', subject: '', message: '' });
+      setForm({ name: "", phone: "", email: "", subject: "", message: "" });
       setSuccess(true);
-      showToast('پیام شما ارسال شد.');
+      showToast("پیام شما ارسال شد.");
       setTimeout(() => setSuccess(false), 5000);
     } catch (err) {
-      showToast(err.message || 'خطا در ارسال پیام.', 'error');
+      showToast(err.message || "خطا در ارسال پیام.", "error");
     } finally {
       setSubmitting(false);
     }
@@ -80,17 +85,26 @@ export default function Contact() {
                 <InfoRow
                   icon="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z M15 11a3 3 0 11-6 0 3 3 0 016 0z"
                   title="آدرس"
-                  content={<p className="text-stone-500 mt-0.5">تهران، خیابان ولیعصر، پلاک ۱۲۳۴</p>}
+                  content={
+                    <p className="text-stone-500 mt-0.5">
+                      تهران، خیابان ولیعصر، پلاک ۱۲۳۴
+                    </p>
+                  }
                 />
                 <InfoRow
                   icon="M3 5a2 2 0 012-2h3.28a1 1 0 01.948.684l1.498 4.493a1 1 0 01-.502 1.21l-2.257 1.13a11.042 11.042 0 005.516 5.516l1.13-2.257a1 1 0 011.21-.502l4.493 1.498a1 1 0 01.684.949V19a2 2 0 01-2 2h-1C9.716 21 3 14.284 3 6V5z"
                   title="تلفن پشتیبانی"
                   content={
                     <>
-                      <a href="tel:+982112345678" className="text-stone-500 mt-0.5 block hover:text-brand-600">
+                      <a
+                        href="tel:+982112345678"
+                        className="text-stone-500 mt-0.5 block hover:text-brand-600"
+                      >
                         ۰۲۱-۱۲۳۴۵۶۷۸
                       </a>
-                      <p className="text-xs text-stone-400 mt-1">شنبه تا پنج‌شنبه ۹ تا ۱۸</p>
+                      <p className="text-xs text-stone-400 mt-1">
+                        شنبه تا پنج‌شنبه ۹ تا ۱۸
+                      </p>
                     </>
                   }
                 />
@@ -99,12 +113,18 @@ export default function Contact() {
                   title="ایمیل"
                   content={
                     <>
-                      <a href="mailto:info@vitrin.ir" className="text-stone-500 hover:text-brand-600">
-                        info@vitrin.ir
+                      <a
+                        href="mailto:info@vitrinsbz.ir"
+                        className="text-stone-500 hover:text-brand-600"
+                      >
+                        info@vitrinsbz.ir
                       </a>
                       <br />
-                      <a href="mailto:support@vitrin.ir" className="text-stone-500 hover:text-brand-600 text-xs">
-                        support@vitrin.ir
+                      <a
+                        href="mailto:support@vitrinsbz.ir"
+                        className="text-stone-500 hover:text-brand-600 text-xs"
+                      >
+                        support@vitrinsbz.ir
                       </a>
                     </>
                   }
@@ -114,10 +134,11 @@ export default function Contact() {
               <div className="bg-brand-50 rounded-2xl p-5 text-sm">
                 <p className="font-medium mb-1">پیگیری سفارش</p>
                 <p className="text-stone-600 text-xs leading-relaxed">
-                  کد سفارش خود را در پیام یا ایمیل ذکر کنید تا سریع‌تر راهنمایی شوید. همچنین می‌توانید از{' '}
+                  کد سفارش خود را در پیام یا ایمیل ذکر کنید تا سریع‌تر راهنمایی
+                  شوید. همچنین می‌توانید از{" "}
                   <Link to="/faq" className="text-brand-600 hover:underline">
                     سوالات متداول
-                  </Link>{' '}
+                  </Link>{" "}
                   استفاده کنید.
                 </p>
               </div>
@@ -126,27 +147,37 @@ export default function Contact() {
             <div className="lg:col-span-3">
               <div className="bg-white rounded-2xl border border-stone-200 p-6 sm:p-8">
                 <h2 className="text-xl font-bold mb-2">فرم پیام</h2>
-                <p className="text-sm text-stone-500 mb-6">معمولاً ظرف یک روز کاری پاسخ می‌دهیم.</p>
+                <p className="text-sm text-stone-500 mb-6">
+                  معمولاً ظرف یک روز کاری پاسخ می‌دهیم.
+                </p>
 
                 <form onSubmit={handleSubmit} className="space-y-4" noValidate>
                   <div className="grid sm:grid-cols-2 gap-4">
                     <div>
-                      <label className="block text-sm font-medium mb-1.5">نام و نام خانوادگی *</label>
+                      <label className="block text-sm font-medium mb-1.5">
+                        نام و نام خانوادگی *
+                      </label>
                       <input
                         type="text"
                         value={form.name}
-                        onChange={(e) => update('name', e.target.value)}
+                        onChange={(e) => update("name", e.target.value)}
                         className="w-full px-4 py-3 text-sm bg-stone-50 border border-stone-200 rounded-xl outline-none focus:border-brand-500"
                         placeholder="نام شما"
                       />
-                      {errors.name && <p className="text-xs text-red-500 mt-1">{errors.name}</p>}
+                      {errors.name && (
+                        <p className="text-xs text-red-500 mt-1">
+                          {errors.name}
+                        </p>
+                      )}
                     </div>
                     <div>
-                      <label className="block text-sm font-medium mb-1.5">شماره تماس</label>
+                      <label className="block text-sm font-medium mb-1.5">
+                        شماره تماس
+                      </label>
                       <input
                         type="tel"
                         value={form.phone}
-                        onChange={(e) => update('phone', e.target.value)}
+                        onChange={(e) => update("phone", e.target.value)}
                         className="w-full px-4 py-3 text-sm bg-stone-50 border border-stone-200 rounded-xl outline-none focus:border-brand-500"
                         placeholder="۰۹۱۲..."
                       />
@@ -154,41 +185,61 @@ export default function Contact() {
                   </div>
 
                   <div>
-                    <label className="block text-sm font-medium mb-1.5">ایمیل *</label>
+                    <label className="block text-sm font-medium mb-1.5">
+                      ایمیل *
+                    </label>
                     <input
                       type="email"
                       value={form.email}
-                      onChange={(e) => update('email', e.target.value)}
+                      onChange={(e) => update("email", e.target.value)}
                       className="w-full px-4 py-3 text-sm bg-stone-50 border border-stone-200 rounded-xl outline-none focus:border-brand-500"
                       placeholder="email@example.com"
                     />
-                    {errors.email && <p className="text-xs text-red-500 mt-1">{errors.email}</p>}
+                    {errors.email && (
+                      <p className="text-xs text-red-500 mt-1">
+                        {errors.email}
+                      </p>
+                    )}
                   </div>
 
                   <div>
-                    <label className="block text-sm font-medium mb-1.5">موضوع *</label>
+                    <label className="block text-sm font-medium mb-1.5">
+                      موضوع *
+                    </label>
                     <select
                       value={form.subject}
-                      onChange={(e) => update('subject', e.target.value)}
+                      onChange={(e) => update("subject", e.target.value)}
                       className="w-full px-4 py-3 text-sm bg-stone-50 border border-stone-200 rounded-xl outline-none focus:border-brand-500"
                     >
                       {SUBJECTS.map((s) => (
-                        <option key={s.value} value={s.value}>{s.label}</option>
+                        <option key={s.value} value={s.value}>
+                          {s.label}
+                        </option>
                       ))}
                     </select>
-                    {errors.subject && <p className="text-xs text-red-500 mt-1">{errors.subject}</p>}
+                    {errors.subject && (
+                      <p className="text-xs text-red-500 mt-1">
+                        {errors.subject}
+                      </p>
+                    )}
                   </div>
 
                   <div>
-                    <label className="block text-sm font-medium mb-1.5">پیام *</label>
+                    <label className="block text-sm font-medium mb-1.5">
+                      پیام *
+                    </label>
                     <textarea
                       rows={5}
                       value={form.message}
-                      onChange={(e) => update('message', e.target.value)}
+                      onChange={(e) => update("message", e.target.value)}
                       className="w-full px-4 py-3 text-sm bg-stone-50 border border-stone-200 rounded-xl outline-none focus:border-brand-500 resize-none"
                       placeholder="پیام خود را بنویسید..."
                     />
-                    {errors.message && <p className="text-xs text-red-500 mt-1">{errors.message}</p>}
+                    {errors.message && (
+                      <p className="text-xs text-red-500 mt-1">
+                        {errors.message}
+                      </p>
+                    )}
                   </div>
 
                   <button
@@ -196,7 +247,7 @@ export default function Contact() {
                     disabled={submitting}
                     className="w-full sm:w-auto px-8 py-3.5 bg-stone-900 text-white font-medium rounded-full hover:bg-stone-800 transition-colors disabled:opacity-50"
                   >
-                    {submitting ? 'در حال ارسال...' : 'ارسال پیام'}
+                    {submitting ? "در حال ارسال..." : "ارسال پیام"}
                   </button>
                 </form>
 
@@ -247,8 +298,18 @@ function InfoRow({ icon, title, content }) {
   return (
     <div className="flex gap-3 text-sm">
       <div className="w-10 h-10 rounded-full bg-brand-100 flex items-center justify-center text-brand-700 flex-shrink-0">
-        <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="1.5" d={icon} />
+        <svg
+          className="w-5 h-5"
+          fill="none"
+          stroke="currentColor"
+          viewBox="0 0 24 24"
+        >
+          <path
+            strokeLinecap="round"
+            strokeLinejoin="round"
+            strokeWidth="1.5"
+            d={icon}
+          />
         </svg>
       </div>
       <div className="flex-1">
