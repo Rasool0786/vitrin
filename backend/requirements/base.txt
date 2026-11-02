@@ -14,7 +14,7 @@ django-redis==5.4.0
 redis==5.2.1
 
 # --- Database driver ---
-psycopg2-binary==2.9.10
+psycopg2-binary==2.9.13
 
 # --- Media / Images ---
 Pillow==11.0.0
