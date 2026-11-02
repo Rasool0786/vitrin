@@ -1,16 +1,16 @@
 # --- Core ---
-Django==5.1.4
-djangorestframework==3.15.2
-djangorestframework-simplejwt==5.3.1
+Django==6.1.2
+djangorestframework==3.18.3
+djangorestframework-simplejwt==5.5.1
 drf-spectacular==0.28.0
 
 # --- Filtering / CORS / Env ---
-django-filter==24.3
-django-cors-headers==4.6.0
-django-environ==0.11.2
+django-filter==26.2
+django-cors-headers==4.9.0
+django-environ==0.14.0
 
 # --- Cache / Redis ---
-django-redis==5.4.0
+django-redis==7.0.0
 redis==5.2.1
 
 # --- Database driver ---
