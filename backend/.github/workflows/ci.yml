@@ -1,0 +1,199 @@
+name: CI
+
+on:
+  push:
+    branches: [main, develop]
+  pull_request:
+    branches: [main, develop]
+
+concurrency:
+  group: ci-${{ github.ref }}
+  cancel-in-progress: true
+
+env:
+  PYTHON_VERSION: "3.13"
+  DJANGO_SETTINGS_MODULE: config.settings.development
+
+jobs:
+  # ===========================================================================
+  # 1) Lint (fast — fails early)
+  # ===========================================================================
+  lint:
+    name: Lint & Format
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: backend
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: ${{ env.PYTHON_VERSION }}
+          cache: pip
+          cache-dependency-path: backend/requirements/testing.txt
+
+      - name: Install lint tools
+        run: |
+          pip install black==24.10.0 isort==5.13.2 flake8==7.1.1 flake8-django==1.4
+
+      - name: black --check
+        run: black --check .
+
+      - name: isort --check
+        run: isort --check-only .
+
+      - name: flake8
+        run: flake8 .
+
+  # ===========================================================================
+  # 2) Migrations check (fast — catches forgotten makemigrations)
+  # ===========================================================================
+  migrations:
+    name: Check Migrations
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: backend
+    services:
+      postgres:
+        image: postgres:16-alpine
+        env:
+          POSTGRES_DB: vitrin
+          POSTGRES_USER: vitrin
+          POSTGRES_PASSWORD: vitrin
+        ports: ["5432:5432"]
+        options: >-
+          --health-cmd "pg_isready -U vitrin -d vitrin"
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 5
+      redis:
+        image: redis:7-alpine
+        ports: ["6379:6379"]
+        options: >-
+          --health-cmd "redis-cli ping"
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 5
+    env:
+      DATABASE_URL: postgres://vitrin:vitrin@localhost:5432/vitrin
+      REDIS_URL: redis://localhost:6379/0
+      SECRET_KEY: ci-only-secret-key-not-for-production
+      DEBUG: "False"
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: ${{ env.PYTHON_VERSION }}
+          cache: pip
+          cache-dependency-path: backend/requirements/base.txt
+
+      - name: Install dependencies
+        run: pip install -r requirements/base.txt
+
+      - name: makemigrations --check --dry-run
+        run: python manage.py makemigrations --check --dry-run
+
+  # ===========================================================================
+  # 3) Tests (with Postgres + Redis)
+  # ===========================================================================
+  test:
+    name: Tests (Python ${{ matrix.python }})
+    runs-on: ubuntu-latest
+    needs: [lint, migrations]
+    strategy:
+      fail-fast: false
+      matrix:
+        python: ["3.12", "3.13"]
+    defaults:
+      run:
+        working-directory: backend
+    services:
+      postgres:
+        image: postgres:16-alpine
+        env:
+          POSTGRES_DB: vitrin
+          POSTGRES_USER: vitrin
+          POSTGRES_PASSWORD: vitrin
+        ports: ["5432:5432"]
+        options: >-
+          --health-cmd "pg_isready -U vitrin -d vitrin"
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 5
+      redis:
+        image: redis:7-alpine
+        ports: ["6379:6379"]
+        options: >-
+          --health-cmd "redis-cli ping"
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 5
+    env:
+      DATABASE_URL: postgres://vitrin:vitrin@localhost:5432/vitrin
+      REDIS_URL: redis://localhost:6379/0
+      SECRET_KEY: ci-only-secret-key-not-for-production
+      DEBUG: "False"
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: ${{ matrix.python }}
+          cache: pip
+          cache-dependency-path: |
+            backend/requirements/base.txt
+            backend/requirements/testing.txt
+
+      - name: Install dependencies
+        run: |
+          pip install -r requirements/base.txt
+          pip install -r requirements/testing.txt
+
+      - name: Run tests with coverage
+        run: |
+          pytest \
+            --cov=users \
+            --cov=products \
+            --cov=cart \
+            --cov=orders \
+            --cov-report=term-missing \
+            --cov-report=xml \
+            -q
+
+      - name: Upload coverage artifact
+        if: matrix.python == '3.13'
+        uses: actions/upload-artifact@v4
+        with:
+          name: coverage-xml
+          path: backend/coverage.xml
+          retention-days: 7
+
+  # ===========================================================================
+  # 4) Docker build (dry-run — only on PRs to main, no push)
+  # ===========================================================================
+  docker-build:
+    name: Docker Build (dry-run)
+    runs-on: ubuntu-latest
+    needs: [test]
+    if: github.event_name == 'pull_request' && github.base_ref == 'main'
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: docker/setup-buildx-action@v3
+
+      - name: Build image
+        uses: docker/build-push-action@v6
+        with:
+          context: ./backend
+          file: ./backend/Dockerfile
+          push: false
+          load: true
+          tags: vitrin-backend:ci-${{ github.sha }}
+          cache-from: type=gha
+          cache-to: type=gha,mode=max
+
+      - name: Image size report
+        run: docker image inspect vitrin-backend:ci-${{ github.sha }} --format='{{.Size}}' | awk '{printf "Image size: %.1f MB\n", $1/1024/1024}'

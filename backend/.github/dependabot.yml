@@ -1,0 +1,37 @@
+version: 2
+updates:
+  - package-ecosystem: "pip"
+    directory: "/backend"
+    schedule:
+      interval: "weekly"
+      day: "monday"
+    open-pull-requests-limit: 5
+    groups:
+      django:
+        patterns:
+          - "django*"
+          - "rest-framework*"
+      testing:
+        patterns:
+          - "pytest*"
+          - "factory-boy"
+          - "fakeredis"
+          - "freezegun"
+          - "Faker"
+      lint:
+        patterns:
+          - "black"
+          - "isort"
+          - "flake8*"
+
+  - package-ecosystem: "github-actions"
+    directory: "/"
+    schedule:
+      interval: "monthly"
+    open-pull-requests-limit: 3
+
+  - package-ecosystem: "docker"
+    directory: "/backend"
+    schedule:
+      interval: "weekly"
+    open-pull-requests-limit: 3
