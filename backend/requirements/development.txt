@@ -8,7 +8,7 @@
 # --- Debug and development tools ---
 django-debug-toolbar==4.4.6
 django-extensions==3.2.3
-ipython==8.30.0
+ipython==9.18.0
 
 # --- Testing (shared with CI) ---
 -r testing.txt
