@@ -1,134 +1,142 @@
 services:
+  # ---------------------------------------------------------------------------
+  # PostgreSQL
+  # ---------------------------------------------------------------------------
   db:
     image: postgres:16-alpine
-    container_name: vitrin-db
-    restart: always
-
-    env_file:
-      .env
-
+    container_name: vitrin_db
+    restart: unless-stopped
+    environment:
+      POSTGRES_DB: ${POSTGRES_DB:-vitrin}
+      POSTGRES_USER: ${POSTGRES_USER:-vitrin}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-vitrin}
     volumes:
       - postgres_data:/var/lib/postgresql/data
-
+    networks:
+      - net
     healthcheck:
-      test: ["CMD-SHELL", 'pg_isready -U "$$POSTGRES_USER" -d "$$POSTGRES_DB"']
-
+      test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_USER:-vitrin} -d ${POSTGRES_DB:-vitrin}"]
       interval: 10s
       timeout: 5s
       retries: 5
       start_period: 10s
 
-    networks:
-      - net
-
+  # ---------------------------------------------------------------------------
+  # Redis
+  # ---------------------------------------------------------------------------
   redis:
     image: redis:7-alpine
-    container_name: vitrin-redis
-    restart: always
-
-    env_file:
-      .env
-
-    command:
-      - sh
-      - -c
-      - >
-        redis-server
-        --requirepass "$$REDIS_PASSWORD"
-        --appendonly yes
-
+    container_name: vitrin_redis
+    restart: unless-stopped
+    command: ["redis-server", "--appendonly", "yes"]
     volumes:
       - redis_data:/data
-
+    networks:
+      - net
     healthcheck:
-      test:
-        [
-          "CMD-SHELL",
-          'REDISCLI_AUTH="$$REDIS_PASSWORD" redis-cli ping | grep -q PONG',
-        ]
-
+      test: ["CMD", "redis-cli", "ping"]
       interval: 10s
       timeout: 5s
       retries: 5
       start_period: 5s
 
-    networks:
-      - net
-
+  # ---------------------------------------------------------------------------
+  # Django (Gunicorn)
+  # ---------------------------------------------------------------------------
   web:
     build:
       context: ./backend
       dockerfile: Dockerfile
-
-    container_name: vitrin-web
-    restart: always
-
+    container_name: vitrin_web
+    restart: unless-stopped
     env_file:
-      .env
-
+      - ./backend/.env
     environment:
-      POSTGRES_HOST: db
-      REDIS_HOST: redis
-
+      DJANGO_SETTINGS_MODULE: config.settings.production
+      DATABASE_URL: postgres://${POSTGRES_USER:-vitrin}:${POSTGRES_PASSWORD:-vitrin}@db:5432/${POSTGRES_DB:-vitrin}
+      REDIS_URL: redis://redis:6379/0
     volumes:
-      - media_data:/app/media
-      - static_data:/app/staticfiles
-
+      - static_volume:/app/staticfiles
+      - media_volume:/app/media
+      - logs_volume:/app/logs
     depends_on:
       db:
         condition: service_healthy
-
       redis:
         condition: service_healthy
-
+    networks:
+      - net
     expose:
       - "8000"
+    command:
+      - gunicorn
+      - config.wsgi:application
+      - --bind
+      - 0.0.0.0:8000
+      - --workers
+      - "3"
+      - --timeout
+      - "60"
+      - --access-logfile
+      - "-"
+      - --error-logfile
+      - "-"
 
-    networks:
-      - net
-
+  # ---------------------------------------------------------------------------
+  # Nginx (Reverse Proxy + Static/Media)
+  # ---------------------------------------------------------------------------
   nginx:
     build:
-      context: .
-      dockerfile: nginx/Dockerfile
-
-    container_name: vitrin-nginx
-    restart: always
-
+      context: ./nginx
+      dockerfile: Dockerfile
+    container_name: vitrin_nginx
+    restart: unless-stopped
     ports:
       - "80:80"
-
+      - "443:443"
     volumes:
-      - static_data:/app/staticfiles:ro
-      - media_data:/app/media:ro
+      - static_volume:/var/www/static:ro
+      - media_volume:/var/www/media:ro
+      - certbot_conf:/etc/letsencrypt:ro
       - certbot_www:/var/www/certbot:ro
-      - certbot_etc:/etc/letsencrypt:ro
-
     depends_on:
       - web
-
     networks:
       - net
 
+  # ---------------------------------------------------------------------------
+  # Certbot (Let's Encrypt auto-renew)
+  # ---------------------------------------------------------------------------
   certbot:
-    image: certbot/certbot
-    container_name: vitrin-certbot
-
+    image: certbot/certbot:latest
+    container_name: vitrin_certbot
     volumes:
+      - certbot_conf:/etc/letsencrypt
       - certbot_www:/var/www/certbot
-      - certbot_etc:/etc/letsencrypt
-
+    entrypoint: >
+      /bin/sh -c 'trap exit TERM;
+      while :; do
+        certbot renew --webroot -w /var/www/certbot --quiet;
+        sleep 12h & wait $${!};
+      done;'
     networks:
       - net
 
+# -----------------------------------------------------------------------------
+# Volumes
+# -----------------------------------------------------------------------------
 volumes:
   postgres_data:
   redis_data:
-  static_data:
-  media_data:
+  static_volume:
+  media_volume:
+  logs_volume:
+  certbot_conf:
   certbot_www:
-  certbot_etc:
 
+# -----------------------------------------------------------------------------
+# Networks
+# -----------------------------------------------------------------------------
 networks:
   net:
     driver: bridge

@@ -1,27 +1,45 @@
 #!/bin/sh
-
 set -e
 
-echo "==> Running deployment checks..."
+echo "[entrypoint] Starting Vitrin backend..."
 
-python manage.py check --deploy
+if [ -n "${DATABASE_URL:-}" ]; then
+  echo "[entrypoint] Waiting for database..."
+  python - <<'PY'
+import os, sys, time
+os.environ.setdefault("DJANGO_SETTINGS_MODULE", "config.settings.production")
+import django
+django.setup()
+from django.db import connection
 
+for attempt in range(1, 31):
+    try:
+        connection.ensure_connection()
+        print("[entrypoint] Database is ready.")
+        sys.exit(0)
+    except Exception as exc:
+        print(f"[entrypoint] DB not ready ({attempt}/30): {exc}")
+        time.sleep(2)
 
-echo "==> Running migrations..."
+print("[entrypoint] ERROR: database did not become ready in time.", file=sys.stderr)
+sys.exit(1)
+PY
+fi
 
+mkdir -p /app/logs /app/staticfiles /app/media
+
+echo "[entrypoint] Applying database migrations..."
 python manage.py migrate --noinput
 
+echo "[entrypoint] Collecting static files..."
+python manage.py collectstatic --noinput --clear
 
-echo "==> Collecting static files..."
+if [ "${SKIP_DEPLOY_CHECK:-0}" != "1" ]; then
+  echo "[entrypoint] Running Django deploy checks..."
+  python manage.py check --deploy
+else
+  echo "[entrypoint] Skipping deploy checks (SKIP_DEPLOY_CHECK=1)."
+fi
 
-python manage.py collectstatic --noinput
-
-
-echo "==> Starting Gunicorn..."
-
-exec gunicorn config.wsgi:application \
-    --bind 0.0.0.0:8000 \
-    --workers "${GUNICORN_WORKERS:-2}" \
-    --timeout 60 \
-    --access-logfile - \
-    --error-logfile -
+echo "[entrypoint] Handing over to: $@"
+exec "$@"
