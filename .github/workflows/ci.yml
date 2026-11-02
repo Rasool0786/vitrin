@@ -196,4 +196,6 @@ jobs:
           cache-to: type=gha,mode=max
 
       - name: Image size report
-        run: docker image inspect vitrin-backend:ci-${{ github.sha }} --format='{{.Size}}' | awk '{printf "Image size: %.1f MB\n", $1/1024/1024}'
+        run: |
+          SIZE=$(docker image inspect vitrin-backend:ci-${{ github.sha }} --format='{{.Size}}')
+          awk -v size="$SIZE" 'BEGIN { printf "Image size: %.1f MB\n", size/1024/1024 }'
